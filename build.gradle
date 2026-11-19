@@ -1,0 +1,49 @@
+plugins { id 'java' }
+repositories { mavenCentral(); maven { url 'https://repo.runelite.net' } }
+dependencies {
+ compileOnly group:'net.runelite', name:'client', version:'latest.release'
+ compileOnly 'org.projectlombok:lombok:1.18.36'
+ annotationProcessor 'org.projectlombok:lombok:1.18.36'
+ testImplementation 'junit:junit:4.13.2'
+ testImplementation group:'net.runelite', name:'client', version:'latest.release'
+ testImplementation 'com.google.code.gson:gson:2.10.1'
+}
+group='org.holyempire'
+version='0.1.0-SNAPSHOT'
+java { sourceCompatibility=JavaVersion.VERSION_11; targetCompatibility=JavaVersion.VERSION_11 }
+
+
+// A JVM -D flag used while building does not become part of a released JAR.
+// Package an explicit, public HTTPS endpoint only when selected by the release build.
+def rosterBaseUrl = providers.gradleProperty('holyempireRosterBaseUrl').orElse('https://roster.holyempireosrs.cc')
+def rosterResourceDir = layout.buildDirectory.dir('generated/roster-resources')
+tasks.register('generateRosterEndpoint') {
+ inputs.property('rosterBaseUrl', rosterBaseUrl)
+ outputs.dir(rosterResourceDir)
+ doLast {
+  def value = rosterBaseUrl.get().trim().replaceAll('/+$', '')
+  if (value) {
+   def uri
+   try { uri = new java.net.URI(value) }
+   catch (java.net.URISyntaxException ignored) {
+    throw new GradleException('Roster release endpoint must be a public HTTPS origin')
+   }
+   if (!'https'.equalsIgnoreCase(uri.scheme) || !uri.host ||
+       uri.rawUserInfo != null || uri.rawQuery != null || uri.rawFragment != null ||
+       !(uri.port in [-1, 443]) || (uri.rawPath && uri.rawPath != '/')) {
+    throw new GradleException('Roster release endpoint must be a public HTTPS origin')
+   }
+  }
+  def output = rosterResourceDir.get().file('holyempire-roster.properties').asFile
+  output.parentFile.mkdirs()
+  output.setText('baseUrl=' + value + '\n', 'UTF-8')
+ }
+}
+sourceSets.main.resources.srcDir(rosterResourceDir)
+tasks.named('processResources') { dependsOn tasks.named('generateRosterEndpoint') }
+tasks.named('test') {
+ systemProperty 'holyempire.testLiveOrigin',
+   providers.gradleProperty('holyempireTestLiveOrigin').orElse('https://roster.holyempireosrs.cc').get()
+ systemProperty 'holyempire.expectedRosterBaseUrl',
+   rosterBaseUrl.get().trim().replaceAll('/+$', '')
+}
