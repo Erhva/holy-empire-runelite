@@ -2,6 +2,7 @@ package org.holyempire.federation;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import net.runelite.client.util.Filepath;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Rule;
@@ -24,7 +25,7 @@ public class WomSnapshotCacheTest {
   return new WomDirectoryClient.Snapshot(members,chapters);
  }
  @Test public void loginAgainUsesSnapshotWithoutNetwork() throws Exception {
-  Path path=folder.newFile("wom-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
   AtomicInteger requests=new AtomicInteger();
   WomSnapshotCache cache=new WomSnapshotCache();
   long now=1_800_000_000_000L;
@@ -41,7 +42,7 @@ public class WomSnapshotCacheTest {
   assertEquals(1,requests.get());
  }
  @Test public void equipmentRefreshBypassesFreshCacheWithoutContactingWom() throws Exception {
-  Path path=folder.newFile("vexillum-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("vexillum-cache.json");
   long now=1_800_000_000_000L;
   AtomicInteger fetches=new AtomicInteger();
   WomSnapshotCache cache=new WomSnapshotCache();
@@ -56,7 +57,7 @@ public class WomSnapshotCacheTest {
     2,fetches.get());
  }
  @Test public void restartReusesFreshDiskCache() throws Exception {
-  Path path=folder.newFile("wom-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
   long now=1_800_000_000_000L;
   new WomSnapshotCache().get(now,path,this::fullSnapshot);
   WomSnapshotCache freshProcess=new WomSnapshotCache();
@@ -69,7 +70,7 @@ public class WomSnapshotCacheTest {
       ?"House of 465":"missing");
  }
  @Test public void cachedNonmemberWarningHashesSurviveRestart() throws Exception {
-  Path path=folder.newFile("wom-warning-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-warning-cache.json");
   long now=1_800_000_000_000L;
   WomDirectoryClient.Snapshot original=fullSnapshot();
   Set<String> warningHashes=Collections.singleton(
@@ -85,7 +86,7 @@ public class WomSnapshotCacheTest {
     restored.snapshot.publicBanHashes,restored.snapshot.members));
  }
  @Test public void failedRefreshRetainsOldPublicRosterAndBacksOff() throws Exception {
-  Path path=folder.newFile("wom-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
   long now=1_800_000_000_000L;
   WomSnapshotCache cache=new WomSnapshotCache();
   cache.get(now,path,this::fullSnapshot);
@@ -104,7 +105,7 @@ public class WomSnapshotCacheTest {
   assertEquals(1,attempts.get());
  }
  @Test public void honorsLongRetryAfterOnRateLimit() throws Exception {
-  Path path=folder.newFile("wom-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
   long now=1_800_000_000_000L;
   WomSnapshotCache cache=new WomSnapshotCache();
   cache.get(now,path,this::fullSnapshot);
@@ -121,7 +122,7 @@ public class WomSnapshotCacheTest {
   assertEquals(1,attempts.get());
  }
  @Test public void excessiveStalenessIsNotAccepted() throws Exception {
-  Path path=folder.newFile("wom-cache.json").toPath();
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
   long now=1_800_000_000_000L;
   new WomSnapshotCache().get(now,path,this::fullSnapshot);
   try{
@@ -131,9 +132,26 @@ public class WomSnapshotCacheTest {
    fail("Must fail instead of using expired snapshot");
   }catch(IOException expected){assertEquals("WOM offline",expected.getMessage());}
  }
+ @Test public void symlinkCacheCannotReadOutsidePluginDirectory() throws Exception {
+  Path outer=folder.getRoot().toPath();
+  Path isolated=folder.newFolder("private-cache").toPath();
+  Filepath outside=Filepath.Unchecked.getRooted(outer).joinSegment("outside.json");
+  long now=1_800_000_000_000L;
+  new WomSnapshotCache().get(now,outside,this::fullSnapshot);
+  java.nio.file.Files.createSymbolicLink(
+    isolated.resolve("wom-cache.json"),outer.resolve("outside.json"));
+  Filepath inside=Filepath.Unchecked.getRooted(isolated).joinSegment("wom-cache.json");
+  AtomicInteger fetches=new AtomicInteger();
+  WomSnapshotCache.Result result=new WomSnapshotCache().get(now+1000,inside,()->{
+   fetches.incrementAndGet();
+   return fullSnapshot();
+  });
+  assertEquals("Symlink cache cannot substitute external saved roster",1,fetches.get());
+  assertTrue(result.snapshot.eligible("test0"));
+ }
  @Test public void corruptCacheIsIgnored() throws Exception {
-  Path path=folder.newFile("wom-cache.json").toPath();
-  java.nio.file.Files.write(path,"{corrupt-json".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  Filepath path=Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
+  path.write("{corrupt-json".getBytes(java.nio.charset.StandardCharsets.UTF_8));
   WomSnapshotCache.Result current=new WomSnapshotCache().get(
     1_800_000_000_000L,path,this::fullSnapshot);
   assertTrue(current.snapshot.eligible("test15"));

@@ -31,7 +31,9 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
-@PluginDescriptor(name="Holy Empire",internalName="holy-empire",description="Combined WOM clan rosters and player indicators")
+@PluginDescriptor(name="Holy Empire",internalName="holy-empire",
+ legacyDataDirectory="holy-empire-officers",
+ description="Combined WOM clan rosters and player indicators")
 public class FederationPlugin extends Plugin {
  @Inject private Client client;
  @Inject private OverlayManager overlayManager;
@@ -48,8 +50,7 @@ public class FederationPlugin extends Plugin {
  @Inject private OkHttpClient httpClient;
  private volatile boolean officerAuthorized;
  private final FederationSession session=new FederationSession();
- private final FederationOfficerCredentialStore officerSecrets=
-   FederationOfficerCredentialStore.local();
+ private FederationOfficerCredentialStore officerSecrets;
  private java.util.concurrent.ScheduledExecutorService scheduler;
  private FederationPanel panel;
  private NavigationButton button;
@@ -65,7 +66,13 @@ public class FederationPlugin extends Plugin {
  @Provides FederationConfig provideConfig(net.runelite.client.config.ConfigManager c){
   return c.getConfig(FederationConfig.class);
  }
- @Override protected void startUp(){
+ @Override protected void startUp() throws Exception {
+   // RuneLite migrates the legacy local key directory on first access.
+   // Neither the public roster cache nor private keys can escape this root.
+   net.runelite.client.util.Filepath pluginData=getPluginDirectory();
+   pluginData.createDirectories();
+   officerSecrets=new FederationOfficerCredentialStore(pluginData);
+   WomDirectoryClient.usePluginCache(pluginData.joinSegment("wom-rosters.json"));
    // The old syncable ConfigManager key must never retain a bearer secret.
    if(config.banSyncToken()!=null && !config.banSyncToken().isEmpty())
     configManager.unsetConfiguration("holyEmpireFederation","banSyncToken");

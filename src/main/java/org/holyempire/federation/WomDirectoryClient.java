@@ -3,6 +3,7 @@ package org.holyempire.federation;
 import com.google.gson.*;
 import java.io.*;
 import okhttp3.OkHttpClient;
+import net.runelite.client.util.Filepath;
 import java.util.*;
 
 final class WomDirectoryClient {
@@ -13,6 +14,8 @@ final class WomDirectoryClient {
   "Six Shooters","Holy Smokes","Holy Cow","Holy Calf","Empire","Cadia","House of 465","world 465","holy kingdom"
  };
  private static final WomSnapshotCache SHARED_CACHE=new WomSnapshotCache();
+ private static volatile Filepath cacheLocation;
+ static void usePluginCache(Filepath file){cacheLocation=file;}
  private static volatile boolean lastResultStale=false;
  static boolean isUsingStaleCache(){return lastResultStale;}
  static final class RateLimited extends IOException {
@@ -114,8 +117,8 @@ final class WomDirectoryClient {
   return fetchFromCentral(http,true);
  }
  private static Snapshot fetchFromCentral(OkHttpClient http,boolean force) throws Exception {
-  java.nio.file.Path cachePath=java.nio.file.Paths.get(System.getProperty("user.home"),
-    ".runelite","holy-empire-public-wom-rosters.json");
+  Filepath cachePath=cacheLocation;
+  if(cachePath==null)throw new IOException("Holy Empire plugin data directory unavailable");
   WomSnapshotCache.Result result=SHARED_CACHE.get(System.currentTimeMillis(),cachePath,
     ()->fetchCentralOnly(RosterEndpoint.baseUrl(),http),force);
   lastResultStale=result.stale;

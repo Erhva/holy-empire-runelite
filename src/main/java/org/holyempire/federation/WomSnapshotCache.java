@@ -3,7 +3,13 @@ package org.holyempire.federation;
 import com.google.gson.*;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.LinkOption;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import net.runelite.client.util.Filepath;
 import java.util.*;
 
 /** Private local cache of PUBLIC WOM rosters, not an identity-verification mechanism. */
@@ -25,10 +31,10 @@ final class WomSnapshotCache {
  private long fetchedAt;
  private long retryAt;
  private boolean diskChecked;
- synchronized Result get(long now,Path path,Fetcher fetcher) throws Exception {
+ synchronized Result get(long now,Filepath path,Fetcher fetcher) throws Exception {
   return get(now,path,fetcher,false);
  }
- synchronized Result get(long now,Path path,Fetcher fetcher,boolean force)
+ synchronized Result get(long now,Filepath path,Fetcher fetcher,boolean force)
     throws Exception {
   if(!diskChecked){
    diskChecked=true;
@@ -68,10 +74,18 @@ final class WomSnapshotCache {
    throw failure;
   }
  }
- private void read(Path path,long now){
+ private void read(Filepath path,long now){
   try {
-   if(!Files.isRegularFile(path) || Files.size(path)>FILE_LIMIT)return;
-   byte[] bytes=Files.readAllBytes(path);
+   if(!path.isFile() || path.size()>FILE_LIMIT)return;
+   byte[] bytes;
+   try(FileChannel input=path.openFileChannel(
+      StandardOpenOption.READ,LinkOption.NOFOLLOW_LINKS)){
+    long size=input.size();
+    if(size<1 || size>FILE_LIMIT)return;
+    ByteBuffer buffer=ByteBuffer.allocate((int)size);
+    while(buffer.hasRemaining())if(input.read(buffer)<0)return;
+    bytes=buffer.array();
+   }
    JsonObject document=new JsonParser().parse(new String(bytes,StandardCharsets.UTF_8))
      .getAsJsonObject();
    if(document.get("schema").getAsInt()!=1)return;
@@ -109,7 +123,7 @@ final class WomSnapshotCache {
      .debug("Ignoring unreadable WOM roster cache: {}",error.toString());
   }
  }
- private void write(Path path,WomDirectoryClient.Snapshot snapshot,long now)
+ private void write(Filepath path,WomDirectoryClient.Snapshot snapshot,long now)
     throws IOException {
   JsonObject document=new JsonObject();
   document.addProperty("schema",1);
@@ -142,14 +156,14 @@ final class WomSnapshotCache {
   }
   byte[] bytes=document.toString().getBytes(StandardCharsets.UTF_8);
   if(bytes.length>FILE_LIMIT)throw new IOException("WOM cache exceeds size limit");
-  Files.createDirectories(path.getParent());
-  Path temp=Files.createTempFile(path.getParent(),"holy-empire-cache-",".tmp");
+  path.getParent().createDirectories();
+  Filepath temp=path.getParent().createTempFile("holy-empire-cache-",".tmp");
   try {
-   Files.write(temp,bytes,StandardOpenOption.TRUNCATE_EXISTING);
-   try {Files.move(temp,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);}
+   temp.write(bytes,StandardOpenOption.WRITE,StandardOpenOption.TRUNCATE_EXISTING);
+   try {temp.moveTo(path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);}
    catch(AtomicMoveNotSupportedException e){
-    Files.move(temp,path,StandardCopyOption.REPLACE_EXISTING);
+    temp.moveTo(path,StandardCopyOption.REPLACE_EXISTING);
    }
-  } finally {Files.deleteIfExists(temp);}
+  } finally {temp.deleteIfExists();}
  }
 }
