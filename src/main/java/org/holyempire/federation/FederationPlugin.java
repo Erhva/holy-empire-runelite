@@ -51,6 +51,7 @@ public class FederationPlugin extends Plugin {
  private volatile boolean officerAuthorized;
  private final FederationSession session=new FederationSession();
  private FederationOfficerCredentialStore officerSecrets;
+ private FederationOfficerEnrollmentClient enrollmentClient;
  private java.util.concurrent.ScheduledExecutorService scheduler;
  private FederationPanel panel;
  private NavigationButton button;
@@ -72,6 +73,8 @@ public class FederationPlugin extends Plugin {
    net.runelite.client.util.Filepath pluginData=getPluginDirectory();
    pluginData.createDirectories();
    officerSecrets=new FederationOfficerCredentialStore(pluginData);
+   enrollmentClient=new FederationOfficerEnrollmentClient(
+     httpClient,pluginData,officerSecrets);
    WomDirectoryClient.usePluginCache(pluginData.joinSegment("wom-rosters.json"));
    // The old syncable ConfigManager key must never retain a bearer secret.
    if(config.banSyncToken()!=null && !config.banSyncToken().isEmpty())
@@ -87,7 +90,10 @@ public class FederationPlugin extends Plugin {
     final long generation=session.generation();
     FederationOfficerSettingsDialog.show(panel,configManager,
       officerSecrets,account,
-      ()->officerAuthorized && session.eligibleFor(account,generation));
+      ()->officerAuthorized && session.eligibleFor(account,generation),
+      ()->requestEnrollment(account,generation),
+      ()->checkEnrollment(account,generation),
+      ()->reviewEnrollment(account,generation));
    });
    panel.setBanDirectoryLoader(this::loadCombinedBans);
    panel.setBanCapture((success,failed)->clientThread.invoke(()->{
@@ -124,6 +130,105 @@ public class FederationPlugin extends Plugin {
    // full download while a fresh snapshot exists.
    scheduler.scheduleWithFixedDelay(this::sync,0,20,TimeUnit.MINUTES);
  }
+ private boolean officerStillEligible(String account,long generation,String chapter){
+  return officerAuthorized && session.eligibleFor(account,generation)
+    && chapter.equals(session.nativeChapter());
+ }
+
+ private void enrollmentMessage(String message){
+  javax.swing.SwingUtilities.invokeLater(()->{
+   if(panel!=null)HolyEmpireDialogs.showMessageDialog(panel,message,
+     "Holy Empire Admin Verification",javax.swing.JOptionPane.INFORMATION_MESSAGE);
+  });
+ }
+
+ private void requestEnrollment(String account,long generation){
+  String chapter=session.nativeChapter();
+  if(!officerStillEligible(account,generation,chapter))return;
+  scheduler.execute(()->{
+   try {
+    String url=enrollmentClient.request(account,chapter);
+    javax.swing.SwingUtilities.invokeLater(()->{
+     if(!officerStillEligible(account,generation,chapter))return;
+     net.runelite.client.util.LinkBrowser.browse(url);
+     enrollmentMessage("Complete Discord sign-in in your browser, then\n"+
+       "send the displayed one-time code to a trusted officer\n"+
+       "in an in-game private message. Return here to check status.");
+    });
+   }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+  });
+ }
+
+ private void checkEnrollment(String account,long generation){
+  String chapter=session.nativeChapter();
+  if(!officerStillEligible(account,generation,chapter))return;
+  scheduler.execute(()->{
+   try{
+    String result=enrollmentClient.check(account,chapter,
+      ()->officerStillEligible(account,generation,chapter));
+    enrollmentMessage(result);
+   }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+  });
+ }
+
+ private void reviewEnrollment(String account,long generation){
+  String chapter=session.nativeChapter();
+  if(!officerStillEligible(account,generation,chapter))return;
+  scheduler.execute(()->{
+   try{
+    com.google.gson.JsonArray queue=enrollmentClient.list(chapter,
+      officerSecrets.read(account));
+    javax.swing.SwingUtilities.invokeLater(()->{
+     if(!officerStillEligible(account,generation,chapter))return;
+     if(queue.size()==0){
+      enrollmentMessage("There are no pending verification requests for "+chapter+".");
+      return;
+     }
+     java.util.LinkedHashMap<String,com.google.gson.JsonObject> options=
+       new java.util.LinkedHashMap<>();
+     for(com.google.gson.JsonElement entry:queue){
+      com.google.gson.JsonObject request=entry.getAsJsonObject();
+      String rsn=request.get("rsn").getAsString();
+      String key=rsn+" — "+request.get("id").getAsString();
+      options.put(key,request);
+     }
+     String selected=(String)javax.swing.JOptionPane.showInputDialog(panel,
+       "Select the officer whose RuneScape identity you will verify.",
+       "Review Admin Requests",javax.swing.JOptionPane.QUESTION_MESSAGE,
+       null,options.keySet().toArray(new String[0]),options.keySet().iterator().next());
+     if(selected==null)return;
+     com.google.gson.JsonObject selectedRequest=options.get(selected);
+     String rsn=selectedRequest.get("rsn").getAsString();
+     String code=javax.swing.JOptionPane.showInputDialog(panel,
+       "Enter the one-time code received in a PRIVATE IN-GAME MESSAGE from "+rsn+
+       ".\nConfirm the sender is the character shown, not a Discord message.");
+     if(code==null)return;
+     String role=(String)javax.swing.JOptionPane.showInputDialog(panel,
+       "Independently confirm this officer's current chapter rank.",
+       "Verify Chapter Rank",javax.swing.JOptionPane.QUESTION_MESSAGE,null,
+       new String[]{"Deputy Owner","Owner"},"Deputy Owner");
+     if(role==null)return;
+     int confirmed=javax.swing.JOptionPane.showConfirmDialog(panel,
+       "I personally verified an in-game private message from "+rsn+
+       "\nand confirmed their current "+role+" rank in "+chapter+".\n"+
+       "Authorize this officer's Admin Credential Key?",
+       "Confirm Officer Identity",javax.swing.JOptionPane.YES_NO_OPTION,
+       javax.swing.JOptionPane.WARNING_MESSAGE);
+     if(confirmed!=javax.swing.JOptionPane.YES_OPTION)return;
+     String rank="Owner".equals(role)?"owner":"deputy_owner";
+     scheduler.execute(()->{
+      try{
+       if(!officerStillEligible(account,generation,chapter))return;
+       enrollmentMessage(enrollmentClient.approve(
+         selectedRequest.get("id").getAsString(),rsn,code.trim(),
+         rank,officerSecrets.read(account)));
+      }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+     });
+    });
+   }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+  });
+ }
+
  @Override protected void shutDown(){
    if(inGameBanSyncButton!=null)inGameBanSyncButton.clear(client);
    inGameBanSyncButton=null;

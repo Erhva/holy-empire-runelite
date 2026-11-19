@@ -44,15 +44,34 @@ final class FederationOfficerSettingsDialog {
  static void show(Component parent,ConfigManager manager,
                   FederationOfficerCredentialStore secrets,String account,
                   BooleanSupplier authorized){
+  show(parent,manager,secrets,account,authorized,null,null,null);
+ }
+
+ static void show(Component parent,ConfigManager manager,
+                  FederationOfficerCredentialStore secrets,String account,
+                  BooleanSupplier authorized,
+                  Runnable requestVerification,Runnable checkVerification,
+                  Runnable reviewRequests){
   if(!authorized.getAsBoolean())return;
   JPasswordField token=new JPasswordField(26);
   token.setName("holyEmpireAdminCredentialKey");
   token.setToolTipText("Leave blank to keep the existing admin credential key.");
   JPanel fields=credentialFields(token,!secrets.read(account).isEmpty());
   try {
-   int choice=HolyEmpireDialogs.showConfirmDialog(parent,fields,"Admin Verification",
-      JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE);
-   if(choice!=JOptionPane.OK_OPTION || !authorized.getAsBoolean())return;
+   Object[] choices={"Save Key","Request Verification","Check Status",
+     "Review Requests","Cancel"};
+   int choice=(requestVerification==null)?
+     HolyEmpireDialogs.showConfirmDialog(parent,fields,"Admin Verification",
+       JOptionPane.OK_CANCEL_OPTION,JOptionPane.PLAIN_MESSAGE):
+     JOptionPane.showOptionDialog(parent,fields,"Admin Verification",
+       JOptionPane.DEFAULT_OPTION,JOptionPane.PLAIN_MESSAGE,null,choices,choices[0]);
+   if(!authorized.getAsBoolean())return;
+   if(requestVerification!=null){
+    if(choice==1){requestVerification.run();return;}
+    if(choice==2){checkVerification.run();return;}
+    if(choice==3){reviewRequests.run();return;}
+   }
+   if(choice!=0)return;
    char[] password=token.getPassword();
    try {
     if(password.length>0 && (password.length<24 || password.length>256)){
