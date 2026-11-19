@@ -8,6 +8,7 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Window;
 import javax.swing.Icon;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
@@ -40,12 +41,17 @@ final class HolyEmpireDialogs {
   return center(config.getBounds(),insets,size);
  }
 
+ /** Center the actual dialog on the monitor containing the RuneLite window. */
+ static void centerWindow(Component parent,Window window){
+  window.setLocation(location(parent,window.getSize()));
+ }
+
  private static int show(Component parent,Object message,String title,int optionType,
     int messageType,Icon icon,Object[] options,Object initialValue){
   JOptionPane pane=new JOptionPane(message,messageType,optionType,icon,options,initialValue);
   JDialog dialog=pane.createDialog(parent,title);
   try{
-   dialog.setLocation(location(parent,dialog.getSize()));
+   centerWindow(parent,dialog);
    dialog.setVisible(true);
    Object result=pane.getValue();
    if(result==null || JOptionPane.UNINITIALIZED_VALUE.equals(result))

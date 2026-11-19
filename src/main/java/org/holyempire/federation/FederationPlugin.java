@@ -91,9 +91,9 @@ public class FederationPlugin extends Plugin {
     FederationOfficerSettingsDialog.show(panel,configManager,
       officerSecrets,account,
       ()->officerAuthorized && session.eligibleFor(account,generation),
-      ()->requestEnrollment(account,generation),
-      ()->checkEnrollment(account,generation),
-      ()->reviewEnrollment(account,generation));
+      (owner,feedback)->requestEnrollment(account,generation,feedback),
+      (owner,feedback)->checkEnrollment(account,generation,feedback),
+      (owner,feedback)->reviewEnrollment(account,generation,owner,feedback));
    });
    panel.setBanDirectoryLoader(this::loadCombinedBans);
    panel.setBanCapture((success,failed)->clientThread.invoke(()->{
@@ -135,14 +135,12 @@ public class FederationPlugin extends Plugin {
     && chapter.equals(session.nativeChapter());
  }
 
- private void enrollmentMessage(String message){
-  javax.swing.SwingUtilities.invokeLater(()->{
-   if(panel!=null)HolyEmpireDialogs.showMessageDialog(panel,message,
-     "Holy Empire Admin Verification",javax.swing.JOptionPane.INFORMATION_MESSAGE);
-  });
+ private void enrollmentMessage(String message,java.util.function.Consumer<String> feedback){
+  if(feedback!=null)feedback.accept(message);
  }
 
- private void requestEnrollment(String account,long generation){
+ private void requestEnrollment(String account,long generation,
+   java.util.function.Consumer<String> feedback){
   String chapter=session.nativeChapter();
   if(!officerStillEligible(account,generation,chapter))return;
   scheduler.execute(()->{
@@ -153,25 +151,27 @@ public class FederationPlugin extends Plugin {
      net.runelite.client.util.LinkBrowser.browse(url);
      enrollmentMessage("Complete Discord sign-in in your browser, then\n"+
        "send the displayed one-time code to a trusted officer\n"+
-       "in an in-game private message. Return here to check status.");
+       "in an in-game private message. Return here to check status.",feedback);
     });
-   }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+   }catch(Exception ex){enrollmentMessage(ex.getMessage(),feedback);}
   });
  }
 
- private void checkEnrollment(String account,long generation){
+ private void checkEnrollment(String account,long generation,
+   java.util.function.Consumer<String> feedback){
   String chapter=session.nativeChapter();
   if(!officerStillEligible(account,generation,chapter))return;
   scheduler.execute(()->{
    try{
     String result=enrollmentClient.check(account,chapter,
       ()->officerStillEligible(account,generation,chapter));
-    enrollmentMessage(result);
-   }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+    enrollmentMessage(result,feedback);
+   }catch(Exception ex){enrollmentMessage(ex.getMessage(),feedback);}
   });
  }
 
- private void reviewEnrollment(String account,long generation){
+ private void reviewEnrollment(String account,long generation,java.awt.Component owner,
+   java.util.function.Consumer<String> feedback){
   String chapter=session.nativeChapter();
   if(!officerStillEligible(account,generation,chapter))return;
   scheduler.execute(()->{
@@ -181,7 +181,7 @@ public class FederationPlugin extends Plugin {
     javax.swing.SwingUtilities.invokeLater(()->{
      if(!officerStillEligible(account,generation,chapter))return;
      if(queue.size()==0){
-      enrollmentMessage("There are no pending verification requests for "+chapter+".");
+      enrollmentMessage("There are no pending verification requests for "+chapter+".",feedback);
       return;
      }
      java.util.LinkedHashMap<String,com.google.gson.JsonObject> options=
@@ -192,23 +192,23 @@ public class FederationPlugin extends Plugin {
       String key=rsn+" — "+request.get("id").getAsString();
       options.put(key,request);
      }
-     String selected=(String)javax.swing.JOptionPane.showInputDialog(panel,
+     String selected=(String)javax.swing.JOptionPane.showInputDialog(owner,
        "Select the officer whose RuneScape identity you will verify.",
        "Review Admin Requests",javax.swing.JOptionPane.QUESTION_MESSAGE,
        null,options.keySet().toArray(new String[0]),options.keySet().iterator().next());
      if(selected==null)return;
      com.google.gson.JsonObject selectedRequest=options.get(selected);
      String rsn=selectedRequest.get("rsn").getAsString();
-     String code=javax.swing.JOptionPane.showInputDialog(panel,
+     String code=javax.swing.JOptionPane.showInputDialog(owner,
        "Enter the one-time code received in a PRIVATE IN-GAME MESSAGE from "+rsn+
        ".\nConfirm the sender is the character shown, not a Discord message.");
      if(code==null)return;
-     String role=(String)javax.swing.JOptionPane.showInputDialog(panel,
+     String role=(String)javax.swing.JOptionPane.showInputDialog(owner,
        "Independently confirm this officer's current chapter rank.",
        "Verify Chapter Rank",javax.swing.JOptionPane.QUESTION_MESSAGE,null,
        new String[]{"Deputy Owner","Owner"},"Deputy Owner");
      if(role==null)return;
-     int confirmed=javax.swing.JOptionPane.showConfirmDialog(panel,
+     int confirmed=javax.swing.JOptionPane.showConfirmDialog(owner,
        "I personally verified an in-game private message from "+rsn+
        "\nand confirmed their current "+role+" rank in "+chapter+".\n"+
        "Authorize this officer's Admin Credential Key?",
@@ -221,11 +221,11 @@ public class FederationPlugin extends Plugin {
        if(!officerStillEligible(account,generation,chapter))return;
        enrollmentMessage(enrollmentClient.approve(
          selectedRequest.get("id").getAsString(),rsn,code.trim(),
-         rank,officerSecrets.read(account)));
-      }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+         rank,officerSecrets.read(account)),feedback);
+      }catch(Exception ex){enrollmentMessage(ex.getMessage(),feedback);}
      });
     });
-   }catch(Exception ex){enrollmentMessage(ex.getMessage());}
+   }catch(Exception ex){enrollmentMessage(ex.getMessage(),feedback);}
   });
  }
 
