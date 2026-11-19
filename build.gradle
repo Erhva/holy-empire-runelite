@@ -2,8 +2,6 @@ plugins { id 'java' }
 repositories { mavenCentral(); maven { url 'https://repo.runelite.net' } }
 dependencies {
  compileOnly group:'net.runelite', name:'client', version:'latest.release'
- compileOnly 'org.projectlombok:lombok:1.18.36'
- annotationProcessor 'org.projectlombok:lombok:1.18.36'
  testImplementation 'junit:junit:4.13.2'
  testImplementation group:'net.runelite', name:'client', version:'latest.release'
  testImplementation 'com.google.code.gson:gson:2.10.1'
