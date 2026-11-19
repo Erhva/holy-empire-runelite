@@ -1,36 +1,28 @@
-# Holy Empire for RuneLite
+# Holy Empire
 
-Holy Empire is a community RuneLite plugin for viewing connected clan chapter rosters and providing clan-specific player indicators and recruitment notices.
+**Holy Empire** is the RuneLite plugin for Holy Empire, an Old School RuneScape megaclan made up of **17 in-game clans (CCs)**. Although Empire members belong to different clan chats, this plugin helps you recognize them and stay connected across the entire Empire.
 
 ## Features
 
-- Combined Wise Old Man chapter roster, global member search, and per-chapter member views
-- Chapter-aware player menu tags, overhead names, and minimap indicators
-- Configurable indicator priority, same-clan behavior, and per-chapter colors
-- Clan links, chapter rank icons, and member verification based on the published roster
-- Ban-list warnings during recruitment; officer-only private ban lookup and upload tools
-- Ban-warning refresh when equipping a Clan vexillum
+- **Spot fellow Empire members:** In-game player indicators, overhead name highlights, and minimap dots help you recognize Holy Empire players, including members of other CCs.
+- **Choose colors for each CC:** Customize each chapter's player indicator and minimap colors so you can tell different Holy Empire clans apart at a glance.
+- **Find clanmates:** Browse chapter rosters and search for Holy Empire members in the plugin's side panel. Player menu tags can also show their chapter.
+- **See shared ban warnings:** When recruiting, the plugin warns you if an applicant appears on Holy Empire's shared ban list, including bans from other CCs. Warnings help officers make informed decisions and do not automatically block recruitment.
+
+## Getting started
+
+Once the plugin is available on the RuneLite Plugin Hub, search for **Holy Empire** and install it. Open the Holy Empire side panel to browse members and chapters, then customize player indicators and chapter colors in the plugin settings.
+
+Member-only features use the published Holy Empire roster to recognize your RuneScape character.
 
 ## Data and privacy
 
-The plugin retrieves clan roster information and filtered recruitment-warning data from Holy Empire-hosted HTTPS services. These endpoints are maintained by Holy Empire and are not operated or verified by RuneLite. A logged-in player name is compared against the published roster locally to determine chapter membership. The roster and available warnings are periodically refreshed, or can be refreshed when a Clan vexillum is equipped.
+The plugin obtains clan roster and ban-warning information from services operated by Holy Empire, not by RuneLite. Requests to these servers expose your IP address and may involve RuneScape account or clan information. Officer-only verification and ban synchronization features use additional Holy Empire services. Access to the private ban list is restricted to authorized officers.
 
-Officers with the required native clan permissions can submit chapter ban information to Holy Empire services after choosing to synchronize. Private ban-directory queries are available only to authorized officers. Ordinary members receive a limited ban-warning feed that does not identify the chapter responsible for a ban.
+## Join Holy Empire
 
-## Development
-
-This project uses Java 11 and Gradle. Build from the repository root:
-
-```sh
-./gradlew test jar -PholyempireRosterBaseUrl=https://roster.holyempireosrs.cc
-```
-
-Install and test in a local RuneLite development client before distributing changes. For information about RuneLite and its plugin ecosystem, see [RuneLite](https://runelite.net/) and the [Plugin Hub](https://runelite.net/plugin-hub/).
-
-## Community
-
-For Holy Empire membership and chapter information, visit [Holy Empire Discord](https://discord.gg/w465).
+Want to become part of the Empire or find the right chapter? Visit our [Holy Empire Discord](https://discord.gg/w465).
 
 ## License
 
-The plugin source is distributed under the BSD 2-Clause License. Third-party logos and game artwork remain the property of their respective owners.
+The plugin source is available under the [BSD 2-Clause License](LICENSE). RuneScape artwork and third-party logos remain the property of their respective owners.
