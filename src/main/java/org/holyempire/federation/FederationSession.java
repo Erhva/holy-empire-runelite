@@ -33,7 +33,9 @@ final class FederationSession
 		String next = WomDirectoryClient.normalize(name);
 		String nextChapter = next.isEmpty() ? "" : InGameClanVerifier.recognizedChapter(chapter);
 		if (next.equals(account) && nextChapter.equals(nativeChapter))
+		{
 			return false;
+		}
 		account = next;
 		nativeChapter = nextChapter;
 		generation++;
@@ -70,7 +72,9 @@ final class FederationSession
 								 WomDirectoryClient.Snapshot data)
 	{
 		if (expectedGeneration != generation || !account.equals(expected))
+		{
 			return false;
+		}
 		List<String> chaptersForAccount = data.members.get(account);
 		eligible = chaptersForAccount != null && !chaptersForAccount.isEmpty();
 		roster = eligible ? data.members : Collections.emptyMap();
@@ -81,20 +85,28 @@ final class FederationSession
 		{
 			Map<String, WomDirectoryClient.ChapterMember> index = new HashMap<>();
 			for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
+			{
 				for (WomDirectoryClient.ChapterMember member :
 					 chapters.getOrDefault(chapter.name, Collections.emptyList()))
+				{
 					index.putIfAbsent(WomDirectoryClient.normalize(member.name), member);
+				}
+			}
 			rankIndex = Collections.unmodifiableMap(index);
 		}
 		else
+		{
 			rankIndex = Collections.emptyMap();
+		}
 		return true;
 	}
 
 	synchronized boolean invalidate(String expected, long expectedGeneration)
 	{
 		if (expectedGeneration != generation || !account.equals(expected))
+		{
 			return false;
+		}
 		clear();
 		return true;
 	}

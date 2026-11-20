@@ -103,7 +103,9 @@ public class FederationPlugin extends Plugin
 		WomDirectoryClient.usePluginCache(pluginData.joinSegment("wom-rosters.json"));
 		// The old syncable ConfigManager key must never retain a bearer secret.
 		if (config.banSyncToken() != null && !config.banSyncToken().isEmpty())
+		{
 			configManager.unsetConfiguration("holyEmpireFederation", "banSyncToken");
+		}
 		overlayManager.add(overlay);
 		overlayManager.add(namesOverlay);
 		overlayManager.add(applicantOverlay);
@@ -128,7 +130,9 @@ public class FederationPlugin extends Plugin
 			try
 			{
 				if (!session.isEligible())
+				{
 					throw new IllegalStateException("Verified Holy Empire membership is required.");
+				}
 				FederationBanRegistry.Snapshot snapshot =
 					FederationBanWidgetCapture.read(client, Instant.now());
 				success.accept(snapshot);
@@ -144,7 +148,9 @@ public class FederationPlugin extends Plugin
 		try (java.io.InputStream stream = getClass().getResourceAsStream("/holy-empire-icon.png"))
 		{
 			if (stream == null)
+			{
 				throw new IllegalStateException("Federation icon missing");
+			}
 			sourceIcon = javax.imageio.ImageIO.read(stream);
 		}
 		catch (java.io.IOException e)
@@ -184,7 +190,9 @@ public class FederationPlugin extends Plugin
 	private void enrollmentMessage(String message, java.util.function.Consumer<String> feedback)
 	{
 		if (feedback != null)
+		{
 			feedback.accept(message);
+		}
 	}
 
 	private void requestEnrollment(String account, long generation,
@@ -192,14 +200,18 @@ public class FederationPlugin extends Plugin
 	{
 		String chapter = session.nativeChapter();
 		if (!officerStillEligible(account, generation, chapter))
+		{
 			return;
+		}
 		scheduler.execute(() -> {
 			try
 			{
 				String url = enrollmentClient.request(account, chapter);
 				javax.swing.SwingUtilities.invokeLater(() -> {
 					if (!officerStillEligible(account, generation, chapter))
+					{
 						return;
+					}
 					net.runelite.client.util.LinkBrowser.browse(url);
 					enrollmentMessage(
 						"Complete Discord sign-in in your browser, then\n"
@@ -220,7 +232,9 @@ public class FederationPlugin extends Plugin
 	{
 		String chapter = session.nativeChapter();
 		if (!officerStillEligible(account, generation, chapter))
+		{
 			return;
+		}
 		scheduler.execute(() -> {
 			try
 			{
@@ -240,7 +254,9 @@ public class FederationPlugin extends Plugin
 	{
 		String chapter = session.nativeChapter();
 		if (!officerStillEligible(account, generation, chapter))
+		{
 			return;
+		}
 		scheduler.execute(() -> {
 			try
 			{
@@ -248,7 +264,9 @@ public class FederationPlugin extends Plugin
 					enrollmentClient.list(chapter, officerSecrets.read(account));
 				javax.swing.SwingUtilities.invokeLater(() -> {
 					if (!officerStillEligible(account, generation, chapter))
+					{
 						return;
+					}
 					if (queue.size() == 0)
 					{
 						enrollmentMessage("There are no pending verification requests for " +
@@ -271,7 +289,9 @@ public class FederationPlugin extends Plugin
 						options.keySet().toArray(new String[0]),
 						options.keySet().iterator().next());
 					if (selected == null)
+					{
 						return;
+					}
 					com.google.gson.JsonObject selectedRequest = options.get(selected);
 					String rsn = selectedRequest.get("rsn").getAsString();
 					String code = javax.swing.JOptionPane.showInputDialog(
@@ -281,13 +301,17 @@ public class FederationPlugin extends Plugin
 							(".\nConfirm the sender is the character shown, not a Discord "
 							 + "message."));
 					if (code == null)
+					{
 						return;
+					}
 					String role = (String)javax.swing.JOptionPane.showInputDialog(
 						owner, "Independently confirm this officer's current chapter rank.",
 						"Verify Chapter Rank", javax.swing.JOptionPane.QUESTION_MESSAGE, null,
 						new String[] {"Deputy Owner", "Owner"}, "Deputy Owner");
 					if (role == null)
+					{
 						return;
+					}
 					int confirmed = javax.swing.JOptionPane.showConfirmDialog(
 						owner,
 						"I personally verified an in-game private message from " + rsn +
@@ -297,13 +321,17 @@ public class FederationPlugin extends Plugin
 						"Confirm Officer Identity", javax.swing.JOptionPane.YES_NO_OPTION,
 						javax.swing.JOptionPane.WARNING_MESSAGE);
 					if (confirmed != javax.swing.JOptionPane.YES_OPTION)
+					{
 						return;
+					}
 					String rank = "Owner".equals(role) ? "owner" : "deputy_owner";
 					scheduler.execute(() -> {
 						try
 						{
 							if (!officerStillEligible(account, generation, chapter))
+							{
 								return;
+							}
 							enrollmentMessage(enrollmentClient.approve(
 												  selectedRequest.get("id").getAsString(), rsn,
 												  code.trim(), rank, officerSecrets.read(account)),
@@ -327,15 +355,21 @@ public class FederationPlugin extends Plugin
 	protected void shutDown()
 	{
 		if (inGameBanSyncButton != null)
+		{
 			inGameBanSyncButton.clear(client);
+		}
 		inGameBanSyncButton = null;
 		overlayManager.remove(overlay);
 		overlayManager.remove(namesOverlay);
 		overlayManager.remove(applicantOverlay);
 		if (button != null)
+		{
 			toolbar.removeNavigation(button);
+		}
 		if (scheduler != null)
+		{
 			scheduler.shutdownNow();
+		}
 		session.observe("", "");
 		officerAuthorized = false;
 		if (panel != null)
@@ -350,7 +384,9 @@ public class FederationPlugin extends Plugin
 		vexillumRefreshTrigger.reset();
 		pendingVexillumBanRefresh = false;
 		if (panel != null)
+		{
 			panel.showMessage("Holy Empire disconnected.");
+		}
 	}
 
 	private String currentAccount()
@@ -371,10 +407,14 @@ public class FederationPlugin extends Plugin
 			applicantBypass.clear();
 			final long observedGeneration = session.generation();
 			if (panel != null)
+			{
 				panel.showMessage("Checking Holy Empire membership...",
 								  () -> session.generation() == observedGeneration);
+			}
 			if (scheduler != null && !scheduler.isShutdown() && !name.isEmpty())
+			{
 				scheduler.execute(this::sync);
+			}
 		}
 		// Officer controls are presentational only. Protected uploads still require
 		// a chapter-scoped server token; no client-provided rank authorizes a write.
@@ -386,12 +426,16 @@ public class FederationPlugin extends Plugin
 		boolean wasOfficer = officerAuthorized;
 		officerAuthorized = permitted;
 		if (!permitted)
+		{
 			applicantBypass.clear();
+		}
 		if (panel != null)
 		{
 			panel.setOfficerSettingsEligible(permitted);
 			if (wasOfficer && !permitted)
+			{
 				panel.clearOfficerEvidence();
+			}
 		}
 		queuePendingVexillumRefresh();
 	}
@@ -401,9 +445,13 @@ public class FederationPlugin extends Plugin
 	{
 		if (!vexillumRefreshTrigger.onContainerChanged(
 				event.getContainerId(), event.getItemContainer(), System.currentTimeMillis()))
+		{
 			return;
+		}
 		if (client.getGameState() != GameState.LOGGED_IN)
+		{
 			return;
+		}
 		pendingVexillumBanRefresh = true;
 		queuePendingVexillumRefresh();
 	}
@@ -412,10 +460,14 @@ public class FederationPlugin extends Plugin
 	{
 		if (!pendingVexillumBanRefresh || client.getGameState() != GameState.LOGGED_IN ||
 			session.account().isEmpty() || scheduler == null || scheduler.isShutdown())
+		{
 			return;
+		}
 		pendingVexillumBanRefresh = false;
 		if (officerAuthorized && panel != null)
+		{
 			panel.refreshPrivateBansOnVexillumEquip();
+		}
 		// Uses the public CDN only; does not rescan WOM groups or game ban menus.
 		scheduler.execute(() -> sync(true));
 	}
@@ -423,7 +475,9 @@ public class FederationPlugin extends Plugin
 	@Subscribe public void onGameStateChanged(GameStateChanged event)
 	{
 		if (event.getGameState() == GameState.STARTING)
-			renderedRankIconIndexes.clear(); // RuneLite recalculates registered icon positions.
+		{
+			renderedRankIconIndexes.clear();
+		} // RuneLite recalculates registered icon positions.
 		if (event.getGameState() != GameState.LOGGED_IN)
 		{
 			applicantBypass.clear();
@@ -432,11 +486,15 @@ public class FederationPlugin extends Plugin
 			vexillumRefreshTrigger.reset();
 			pendingVexillumBanRefresh = false;
 			if (panel != null)
+			{
 				panel.setOfficerSettingsEligible(false);
+			}
 			final long loggedOutGeneration = session.generation();
 			if (panel != null)
+			{
 				panel.showMessage("Log in with an eligible Holy Empire account.",
 								  () -> session.generation() == loggedOutGeneration);
+			}
 		}
 	}
 
@@ -444,7 +502,9 @@ public class FederationPlugin extends Plugin
 	@Subscribe public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		if (client.getGameState() != GameState.LOGGED_IN || !session.isEligible())
+		{
 			return;
+		}
 		if (FederationApplicantGuard.isApplicantAcceptance(event.getMenuOption(), event.getParam1(),
 														   event.getWidgetId()))
 		{
@@ -459,7 +519,9 @@ public class FederationPlugin extends Plugin
 		String name = FederationRecruitmentGuard.recruitmentTarget(
 			event.getMenuOption(), player == null ? null : player.getName(), event.getMenuTarget());
 		if (name == null)
+		{
 			return;
+		}
 		final String account = session.account();
 		final long generation = session.generation();
 		boolean approved =
@@ -475,27 +537,39 @@ public class FederationPlugin extends Plugin
 									  name, chapters,
 									  snapshot != null || session.publicBanWarningAvailable(account));
 		if (message == null)
+		{
 			return;
+		}
 		long now = System.currentTimeMillis();
 		String key = WomDirectoryClient.normalize(name);
 		Long previous = recruitmentAlertTimes.get(key);
 		if (previous != null && now - previous < 5000)
+		{
 			return;
+		}
 		recruitmentAlertTimes.put(key, now);
 		if (recruitmentAlertTimes.size() > 50)
+		{
 			recruitmentAlertTimes.clear();
+		}
 		final boolean includesPrivateData = !chapters.isEmpty();
 		javax.swing.SwingUtilities.invokeLater(() -> {
 			if (!session.eligibleFor(account, generation) || panel == null)
+			{
 				return;
+			}
 			if (includesPrivateData &&
 				(!officerAuthorized || panel.freshRecruitmentBanDirectory() == null))
+			{
 				return;
+			}
 			HolyEmpireDialogs.showMessageDialog(panel, message, "Holy Empire Recruitment Warning",
 												javax.swing.JOptionPane.WARNING_MESSAGE);
 		});
 		if (approved && snapshot == null && panel != null)
+		{
 			panel.preloadBanDirectory();
+		}
 	}
 
 	/**
@@ -505,13 +579,21 @@ public class FederationPlugin extends Plugin
 	private static void selectedApplicantText(Widget widget, List<String> fields, int depth)
 	{
 		if (widget == null || widget.isHidden() || depth > 7 || fields.size() > 250)
+		{
 			return;
+		}
 		if (widget.getText() != null && !widget.getText().isBlank())
+		{
 			fields.add(widget.getText());
+		}
 		Widget[] children = widget.getChildren();
 		if (children != null)
+		{
 			for (Widget child : children)
+			{
 				selectedApplicantText(child, fields, depth + 1);
+			}
+		}
 	}
 
 	/**
@@ -557,12 +639,16 @@ public class FederationPlugin extends Plugin
 		final String menuName = FederationApplicantGuard.extractExactName(event.getMenuTarget());
 		String identified = FederationApplicantGuard.selectedApplicantName(selected);
 		if (identified == null && !FederationApplicantGuard.hasSelectedIdentityEvidence(selected))
+		{
 			identified = menuName;
+		}
 
 		if (bans == null)
 		{
 			if (authorized && panel != null)
+			{
 				panel.preloadBanDirectory();
+			}
 			// Same unavailable-status advice as ordinary Recruit, but only if a
 			// real applicant name was available. No popup for an empty screen.
 			final String message = session.publicBanWarningMatch(account, identified)
@@ -571,27 +657,39 @@ public class FederationPlugin extends Plugin
 											 identified, java.util.Collections.emptyList(),
 											 session.publicBanWarningAvailable(account));
 			if (message != null)
+			{
 				javax.swing.SwingUtilities.invokeLater(() -> {
 					if (panel != null && session.eligibleFor(account, generation))
+					{
 						HolyEmpireDialogs.showMessageDialog(
 							panel, message, "Holy Empire Recruitment Warning",
 							javax.swing.JOptionPane.WARNING_MESSAGE);
+					}
 				});
+			}
 			return;
 		}
 
 		if (!FederationApplicantGuard.hasSelectedIdentityEvidence(selected) && menuName != null)
+		{
 			selected.add(menuName);
+		}
 		final FederationApplicantGuard.Status status =
 			FederationApplicantGuard.status(bans, selected);
 		if (!FederationApplicantGuard.shouldCancelAccept(status))
+		{
 			return;
+		}
 		final String confirmed = FederationApplicantGuard.matchedBannedApplicant(bans, selected);
 		if (confirmed == null)
+		{
 			return;
+		}
 		final List<String> chapters = FederationRecruitmentGuard.matchingChapters(bans, confirmed);
 		if (chapters.isEmpty())
+		{
 			return;
+		}
 		// Consume an explicit, single-use approval ONLY for this still-banned
 		// applicant in the same verified account, chapter and login generation.
 		final String chapter = session.nativeChapter();
@@ -609,12 +707,16 @@ public class FederationPlugin extends Plugin
 		javax.swing.SwingUtilities.invokeLater(() -> {
 			if (panel == null || !session.eligibleFor(account, generation) || !officerAuthorized ||
 				!chapter.equals(session.nativeChapter()))
+			{
 				return;
+			}
 			// A stale or revoked officer snapshot must never arm an override.
 			FederationBanDirectoryClient.Snapshot current = panel.freshRecruitmentBanDirectory();
 			if (current == null ||
 				FederationRecruitmentGuard.matchingChapters(current, confirmed).isEmpty())
+			{
 				return;
+			}
 			Object[] options = {"Keep Blocked", "Allow Once"};
 			int choice = HolyEmpireDialogs.showOptionDialog(
 				panel, message, "Holy Empire — Banned Applicant",
@@ -642,8 +744,10 @@ public class FederationPlugin extends Plugin
 		if (before.isEmpty())
 		{
 			if (session.invalidate(before, generation) && panel != null)
+			{
 				panel.showMessage("Log in with an eligible Holy Empire account.",
 								  () -> session.generation() == generation);
+			}
 			return;
 		}
 		try
@@ -652,18 +756,24 @@ public class FederationPlugin extends Plugin
 				force ? WomDirectoryClient.fetchFreshForVexillum(httpClient)
 					  : WomDirectoryClient.fetch(httpClient);
 			if (!session.publish(before, generation, snapshot))
+			{
 				return;
+			}
 			if (panel != null)
 			{
 				if (session.isEligible())
+				{
 					panel.update(session.rosterFor(before), session.chaptersFor(before),
 								 WomDirectoryClient.isUsingStaleCache(),
 								 ()
 									 -> session.eligibleFor(before, generation),
 								 session.publicBanHashesFor(before));
+				}
 				else
+				{
 					panel.showNotVerified(
 						() -> session.generation() == generation && !session.isEligible());
+				}
 			}
 		}
 		catch (Exception error)
@@ -671,8 +781,10 @@ public class FederationPlugin extends Plugin
 			org.slf4j.LoggerFactory.getLogger(FederationPlugin.class)
 				.warn("WOM unavailable; no complete cached roster: {}", error.toString());
 			if (session.invalidate(before, generation) && panel != null)
+			{
 				panel.showMessage("Roster temporarily unavailable. Will retry automatically.",
 								  () -> session.generation() == generation);
+			}
 		}
 	}
 
@@ -685,13 +797,19 @@ public class FederationPlugin extends Plugin
 	private int menuRankIcon(String playerName)
 	{
 		if (!config.showClanRankIcons() || client.getModIcons() == null)
+		{
 			return -1;
+		}
 		WomDirectoryClient.ChapterMember member = session.rankFor(playerName);
 		if (member == null)
+		{
 			return -1;
+		}
 		Icon icon = HolyEmpireRankDisplay.icon(member);
 		if (!(icon instanceof ImageIcon))
+		{
 			return -1;
+		}
 		String key = HolyEmpireRankDisplay.isEmperor(member.name)
 						 ? "emperor"
 						 : WomDirectoryClient.normalize(member.rank);
@@ -709,7 +827,9 @@ public class FederationPlugin extends Plugin
 			}
 			int index = chatIconManager.chatIconIndex(id);
 			if (index >= 0)
+			{
 				renderedRankIconIndexes.add(index);
+			}
 			return index;
 		}
 		catch (RuntimeException failure)
@@ -723,7 +843,9 @@ public class FederationPlugin extends Plugin
 	{
 		if (!officerAuthorized || !session.isEligible() || scheduler == null ||
 			scheduler.isShutdown())
+		{
 			return;
+		}
 		final String account = session.account();
 		final long generation = session.generation();
 		final String chapter = session.nativeChapter();
@@ -731,34 +853,44 @@ public class FederationPlugin extends Plugin
 			-> officerAuthorized && session.eligibleFor(account, generation) &&
 				   chapter.equals(session.nativeChapter());
 		if (!authorized.getAsBoolean())
+		{
 			return;
+		}
 		final String endpoint = config.banSyncEndpoint();
 		final String token = officerSecrets.read(account);
 		if (!FederationBanUploadClient.acceptedEndpoint(endpoint) || token.isEmpty())
 		{
 			if (panel != null)
+			{
 				panel.failBanDirectory("Configure an approved admin credential key under Ban "
 										   + "List > Admin Verification.",
 									   authorized);
+			}
 			return;
 		}
 		scheduler.execute(() -> {
 			if (!authorized.getAsBoolean())
+			{
 				return;
+			}
 			try
 			{
 				FederationBanDirectoryClient.Snapshot bans =
 					FederationBanDirectoryClient.fetch(chapter, endpoint, token, httpClient);
 				if (panel != null)
+				{
 					panel.displayBanDirectory(bans, authorized);
+				}
 			}
 			catch (Exception error)
 			{
 				// Only report a generic network status; never log officer credentials or ban names.
 				if (panel != null)
+				{
 					panel.failBanDirectory("Could not retrieve synchronized bans. Check the "
 											   + "private connection and officer access.",
 										   authorized);
+				}
 			}
 		});
 	}
@@ -775,7 +907,9 @@ public class FederationPlugin extends Plugin
 	private void syncBanListFromGame()
 	{
 		if (banUploadInProgress)
+		{
 			return;
+		}
 		final String activeAccount = session.account();
 		final long activeGeneration = session.generation();
 		if (!session.isEligible() || activeAccount.isEmpty())
@@ -811,7 +945,9 @@ public class FederationPlugin extends Plugin
 		}
 		// The local preview is temporary; the private server independently authorizes uploads.
 		if (panel != null)
+		{
 			panel.banRegistry().put(snapshot);
+		}
 		String endpoint = config.banSyncEndpoint();
 		String token = officerSecrets.read(activeAccount);
 		if (!FederationBanUploadClient.acceptedEndpoint(endpoint) || token == null ||
@@ -837,7 +973,9 @@ public class FederationPlugin extends Plugin
 			{
 				if (!currentOfficerCapture(session, activeAccount, activeGeneration, snapshot,
 										   officerAuthorized))
+				{
 					return;
+				}
 				result =
 					FederationBanUploadClient.send(snapshot, endpoint, token.trim(), httpClient);
 			}
@@ -866,8 +1004,10 @@ public class FederationPlugin extends Plugin
 	{
 		javax.swing.SwingUtilities.invokeLater(() -> {
 			if (panel != null && stillCurrent.getAsBoolean())
+			{
 				HolyEmpireDialogs.showMessageDialog(panel, message, "Holy Empire Ban Sync",
 													javax.swing.JOptionPane.INFORMATION_MESSAGE);
+			}
 		});
 	}
 
@@ -875,7 +1015,9 @@ public class FederationPlugin extends Plugin
 	@Subscribe(priority = -1.0f) public void onClientTick(ClientTick e)
 	{
 		if (inGameBanSyncButton != null)
+		{
 			inGameBanSyncButton.update(client);
+		}
 		// Opt-in diagnostic in the isolated developer launcher only. Log no
 		// player names, ban-list entries or upload secrets.
 		if (Boolean.getBoolean("holyempire.debugBanSync"))
@@ -904,7 +1046,9 @@ public class FederationPlugin extends Plugin
 			}
 		}
 		if (client.isMenuOpen())
+		{
 			return;
+		}
 		// A matching banned player gets a visible warning in the native Recruit
 		// menu itself, before the click. Private details never reach non-officers.
 		FederationBanDirectoryClient.Snapshot recruitBans =
@@ -915,26 +1059,38 @@ public class FederationPlugin extends Plugin
 			String name = FederationRecruitmentGuard.recruitmentTarget(
 				menu.getOption(), candidate == null ? null : candidate.getName(), menu.getTarget());
 			if (name == null)
+			{
 				continue;
+			}
 			boolean privateMatch =
 				!FederationRecruitmentGuard.matchingChapters(recruitBans, name).isEmpty();
 			if (!privateMatch && !session.publicBanWarningMatch(currentAccount(), name))
+			{
 				continue;
+			}
 			String target = menu.getTarget();
 			if (target != null && !target.contains("[BAN-LIST WARNING]"))
+			{
 				menu.setTarget(target + " <col=ff5555>[BAN-LIST WARNING]</col>");
+			}
 		}
 		Map<String, List<String>> lookup = members();
 		if (lookup.isEmpty())
+		{
 			return;
+		}
 		for (MenuEntry entry : client.getMenuEntries())
 		{
 			Player p = entry.getPlayer();
 			if (p == null || p.getName() == null)
+			{
 				continue;
+			}
 			List<String> clans = lookup.get(WomDirectoryClient.normalize(p.getName()));
 			if (clans == null || clans.isEmpty())
+			{
 				continue;
+			}
 			boolean same = SameChapterVisibility.isSameChapter(lookup.get(currentAccount()), clans);
 			boolean showTag = SameChapterVisibility.showMenuTag(config.showClanMenu(), same,
 																config.showSameChapterMenu());
@@ -946,7 +1102,9 @@ public class FederationPlugin extends Plugin
 				FederationMenuRankIcons.apply(updated, showRank ? menuRankIcon(p.getName()) : -1,
 											  renderedRankIconIndexes, showRank);
 			if (updated != null && !updated.equals(old))
+			{
 				entry.setTarget(updated);
+			}
 		}
 	}
 }

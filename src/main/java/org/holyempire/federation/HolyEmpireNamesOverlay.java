@@ -54,13 +54,19 @@ public class HolyEmpireNamesOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		if (!config.showOverheadNames())
+		{
 			return null;
+		}
 		Map<String, List<String>> roster = plugin.members();
 		if (roster.isEmpty())
+		{
 			return null;
+		}
 		Player local = client.getLocalPlayer();
 		if (local == null)
+		{
 			return null;
+		}
 		boolean inPvp = client.getVarbitValue(VarbitID.INSIDE_WILDERNESS) == 1 ||
 						client.getVarbitValue(VarbitID.PVP_AREA_CLIENT) == 1;
 		int team = local.getTeam();
@@ -69,14 +75,20 @@ public class HolyEmpireNamesOverlay extends Overlay
 		for (Player player : client.getPlayers())
 		{
 			if (player == null || player == local || player.getName() == null)
+			{
 				continue;
+			}
 			List<String> playerClans = roster.get(WomDirectoryClient.normalize(player.getName()));
 			if (playerClans == null || playerClans.isEmpty())
+			{
 				continue;
+			}
 			boolean same = SameChapterVisibility.isSameChapter(localChapters, playerClans);
 			if (!SameChapterVisibility.showOverhead(config.showOverheadNames(), same,
 													config.showSameChapterOverhead()))
+			{
 				continue;
+			}
 			boolean inParty =
 				party.isInParty() && party.getMemberByDisplayName(player.getName()) != null;
 			if (!HolyEmpireOverheadPriority.mayDraw(
@@ -87,13 +99,17 @@ public class HolyEmpireNamesOverlay extends Overlay
 					team != 0 && player.getTeam() == team &&
 						enabled(indicators.highlightTeamMembers(), inPvp),
 					player.isClanMember() && enabled(indicators.highlightClanMembers(), inPvp)))
+			{
 				continue;
+			}
 			String name = net.runelite.client.util.Text.sanitize(player.getName());
 			Point pos =
 				player.getCanvasTextLocation(graphics, name, player.getLogicalHeight() + 40);
 			if (pos != null)
+			{
 				OverlayUtil.renderTextLocation(
 					graphics, pos, name, ChapterIndicatorColors.overheadColor(config, playerClans));
+			}
 		}
 		return null;
 	}

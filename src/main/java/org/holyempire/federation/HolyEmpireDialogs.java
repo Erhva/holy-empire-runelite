@@ -47,12 +47,16 @@ final class HolyEmpireDialogs
 			java.awt.Window owner =
 				parent == null ? null : SwingUtilities.getWindowAncestor(parent);
 			if (owner != null)
+			{
 				config = owner.getGraphicsConfiguration();
+			}
 		}
 		if (config == null)
+		{
 			config = GraphicsEnvironment.getLocalGraphicsEnvironment()
 						 .getDefaultScreenDevice()
 						 .getDefaultConfiguration();
+		}
 		Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(config);
 		return center(config.getBounds(), insets, size);
 	}
@@ -75,14 +79,20 @@ final class HolyEmpireDialogs
 			dialog.setVisible(true);
 			Object result = pane.getValue();
 			if (result == null || JOptionPane.UNINITIALIZED_VALUE.equals(result))
+			{
 				return JOptionPane.CLOSED_OPTION;
+			}
 			if (options == null)
 			{
 				return result instanceof Integer ? (Integer)result : JOptionPane.CLOSED_OPTION;
 			}
 			for (int i = 0; i < options.length; i++)
+			{
 				if (options[i].equals(result))
+				{
 					return i;
+				}
+			}
 			return JOptionPane.CLOSED_OPTION;
 		}
 		finally

@@ -27,12 +27,16 @@ public class HolyEmpireLayoutTest
 		for (Component child : root.getComponents())
 		{
 			if (name.equals(child.getName()))
+			{
 				return child;
+			}
 			if (child instanceof Container)
 			{
 				Component found = named((Container)child, name);
 				if (found != null)
+				{
 					return found;
+				}
 			}
 		}
 		return null;
@@ -95,9 +99,13 @@ public class HolyEmpireLayoutTest
 			for (java.awt.Component c : ((JPanel)((BorderLayout)panel[0].getLayout())
 											 .getLayoutComponent(BorderLayout.CENTER))
 											.getComponents())
+			{
 				if (c instanceof JTextArea &&
 					((JTextArea)c).getText().equals("Checking Holy Empire membership..."))
+				{
 					count++;
+				}
+			}
 			assertEquals(1, count);
 		});
 	}

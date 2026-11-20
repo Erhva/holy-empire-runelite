@@ -32,7 +32,9 @@ public class CentralRosterLiveSmokeTest
 				   snapshot.chapters.containsKey("House of 465"));
 		assertTrue("Snapshot must identify its generation time", snapshot.sourceTimestampMs > 0);
 		if (base.equals("https://roster.holyempireosrs.cc"))
+		{
 			assertTrue("Production manifest must include verified nonmember ban warnings",
 					   snapshot.publicBanStatusAvailable);
+		}
 	}
 }

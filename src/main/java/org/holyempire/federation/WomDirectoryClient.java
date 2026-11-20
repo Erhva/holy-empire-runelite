@@ -67,22 +67,34 @@ final class WomDirectoryClient
 		String readableRank()
 		{
 			if (rank == null || rank.trim().isEmpty())
+			{
 				return "Unranked";
+			}
 			String[] parts = rank.replace('_', ' ').trim().split(" ");
 			StringBuilder result = new StringBuilder();
 			for (String part : parts)
 			{
 				if (part.isEmpty())
+				{
 					continue;
+				}
 				if (result.length() > 0)
+				{
 					result.append(' ');
+				}
 				if (part.equalsIgnoreCase("tzkal"))
+				{
 					result.append("TzKal");
+				}
 				else if (part.equalsIgnoreCase("tztok"))
+				{
 					result.append("TzTok");
+				}
 				else
+				{
 					result.append(Character.toUpperCase(part.charAt(0)))
 						.append(part.substring(1).toLowerCase(Locale.ROOT));
+				}
 			}
 			return result.length() == 0 ? "Unranked" : result.toString();
 		}
@@ -146,23 +158,31 @@ final class WomDirectoryClient
 						   Map<String, List<ChapterMember>> chapters) throws IOException
 	{
 		if (!body.has("id") || body.get("id").getAsInt() != GROUPS[index])
+		{
 			throw new IOException("WOM group identity mismatch");
+		}
 		JsonArray list = body.getAsJsonArray("memberships");
 		if (list == null || list.size() == 0 || list.size() > 2000)
+		{
 			throw new IOException("Invalid WOM roster");
+		}
 		List<ChapterMember> chapter = new ArrayList<>();
 		for (JsonElement item : list)
 		{
 			JsonObject membership = item.getAsJsonObject();
 			JsonObject player = membership.getAsJsonObject("player");
 			if (player == null)
+			{
 				throw new IOException("Invalid WOM member");
+			}
 			String name = player.has("displayName") && !player.get("displayName").isJsonNull()
 							  ? player.get("displayName").getAsString()
 							  : player.get("username").getAsString();
 			String key = normalize(name);
 			if (!key.matches("[a-z0-9 _-]{1,12}"))
+			{
 				throw new IOException("Invalid RuneScape name");
+			}
 			combined.computeIfAbsent(key, k -> new TreeSet<>()).add(CLANS[index]);
 			String rank = membership.has("role") && !membership.get("role").isJsonNull()
 							  ? membership.get("role").getAsString()
@@ -193,7 +213,9 @@ final class WomDirectoryClient
 	{
 		Filepath cachePath = cacheLocation;
 		if (cachePath == null)
+		{
 			throw new IOException("Holy Empire plugin data directory unavailable");
+		}
 		WomSnapshotCache.Result result =
 			SHARED_CACHE.get(System.currentTimeMillis(), cachePath,
 							 () -> fetchCentralOnly(RosterEndpoint.baseUrl(), http), force);
@@ -205,7 +227,9 @@ final class WomDirectoryClient
 	static Snapshot fetchCentralOnly(String base, OkHttpClient http) throws Exception
 	{
 		if (base == null || base.trim().isEmpty())
+		{
 			throw new IOException("Holy Empire public roster CDN endpoint is not configured");
+		}
 		return CentralRosterClient.fetch(base, http);
 	}
 }

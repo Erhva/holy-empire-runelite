@@ -51,7 +51,9 @@ final class FederationInGameBanSyncButton
 	{
 		if (client == null || client.getGameState() != GameState.LOGGED_IN ||
 			client.getLocalPlayer() == null || client.getLocalPlayer().getName() == null)
+		{
 			return null;
+		}
 		String me = WomDirectoryClient.normalize(client.getLocalPlayer().getName());
 		ClanSettings settings = client.getClanSettings();
 		if (settings != null && FederationBanRegistry.officialChapter(settings.getName()) != null)
@@ -70,7 +72,9 @@ final class FederationInGameBanSyncButton
 				}
 			}
 			if (member != null)
+			{
 				return member.getRank();
+			}
 		}
 		// The live clan channel may populate before ClanSettings is available.
 		// Never use the separate guest-clan channel for authorizing actions.
@@ -91,7 +95,9 @@ final class FederationInGameBanSyncButton
 				}
 			}
 			if (member != null)
+			{
 				return member.getRank();
+			}
 		}
 		return null;
 	}
@@ -155,7 +161,9 @@ final class FederationInGameBanSyncButton
 		label.setOnMouseLeaveListener((JavaScriptCallback)event -> hover(false));
 		label.setOnOpListener((JavaScriptCallback)event -> {
 			if (isOwnerOrDeputy(client))
+			{
 				requestSync.run();
+			}
 		});
 		label.setHasListener(true);
 		label.revalidate();
@@ -182,7 +190,9 @@ final class FederationInGameBanSyncButton
 	private void hover(boolean active)
 	{
 		if (hovered == active)
+		{
 			return;
+		}
 		hovered = active;
 		for (int i = 0; i < baseSprites.size(); i++)
 		{
@@ -191,18 +201,26 @@ final class FederationInGameBanSyncButton
 			part.revalidate();
 		}
 		if (textWidget != null)
+		{
 			textWidget.setText(active ? "<col=ffdf77>Sync Ban List</col>"
 									  : "<col=ffffff>Sync Ban List</col>");
+		}
 	}
 
 	private static boolean isStillChild(Widget root, Widget child)
 	{
 		Widget[] children = root.getChildren();
 		if (children == null)
+		{
 			return false;
+		}
 		for (Widget entry : children)
+		{
 			if (entry == child)
+			{
 				return true;
+			}
+		}
 		return false;
 	}
 
@@ -211,7 +229,9 @@ final class FederationInGameBanSyncButton
 		for (Widget part : parts)
 		{
 			if (part != null && part.isSelfHidden() == visible)
+			{
 				part.setHidden(!visible);
+			}
 		}
 	}
 

@@ -62,7 +62,9 @@ final class FederationApplicantOneTimeBypass
 		Approval prior = pending;
 		pending = null;
 		if (prior == null)
+		{
 			return false;
+		}
 		return now < prior.expiresAt &&
 			prior.account.equals(WomDirectoryClient.normalize(account)) &&
 			prior.generation == generation && prior.chapter.equals(chapter) &&

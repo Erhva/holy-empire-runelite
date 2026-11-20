@@ -139,11 +139,15 @@ public class FederationApplicantOverlayTest
 			{
 				int pixel = image.getRGB(x, y);
 				if (((pixel >>> 24) & 0xff) == 0)
+				{
 					continue;
+				}
 				visible++;
 				Color color = new Color(pixel, true);
 				if (color.getRed() > color.getGreen() + 75 && color.getRed() > color.getBlue() + 75)
+				{
 					red++;
+				}
 			}
 		}
 		assertTrue("Bold red lettering must actually render", red > 30);

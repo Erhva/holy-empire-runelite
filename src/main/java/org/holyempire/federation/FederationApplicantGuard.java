@@ -27,8 +27,10 @@ final class FederationApplicantGuard
 		String action = option == null ? "" : Text.removeTags(option).trim();
 		// Widget-based matching catches buttons whose menu action is "Select".
 		if (paramWidget == accept || clickedWidget == accept)
+		{
 			return action.isEmpty() || "Accept".equalsIgnoreCase(action) ||
 				"Select".equalsIgnoreCase(action) || "Continue".equalsIgnoreCase(action);
+		}
 		return "Accept".equalsIgnoreCase(action) &&
 			((paramWidget >>> 16) == group || (clickedWidget >>> 16) == group);
 	}
@@ -48,10 +50,14 @@ final class FederationApplicantGuard
 						 List<String> selectedDetails)
 	{
 		if (directory == null)
+		{
 			return Status.UNVERIFIED;
+		}
 		String selected = selectedApplicantName(selectedDetails);
 		if (selected == null)
+		{
 			return Status.UNVERIFIED;
+		}
 		return FederationRecruitmentGuard.matchingChapters(directory, selected).isEmpty()
 			? Status.CLEAR
 			: Status.BANNED;
@@ -62,11 +68,17 @@ final class FederationApplicantGuard
 	{
 		String applicant = selectedApplicantName(selectedDetails);
 		if (applicant == null || approvedDirectory == null)
+		{
 			return null;
+		}
 		for (FederationBanDirectoryClient.Entry entry : approvedDirectory.entries)
+		{
 			if (WomDirectoryClient.normalize(entry.name)
 					.equals(WomDirectoryClient.normalize(applicant)))
+			{
 				return entry.name;
+			}
+		}
 		return null;
 	}
 
@@ -78,31 +90,47 @@ final class FederationApplicantGuard
 	static String selectedApplicantName(List<String> selectedDetails)
 	{
 		if (selectedDetails == null || selectedDetails.isEmpty())
+		{
 			return null;
+		}
 		Set<String> labeled = new LinkedHashSet<>();
 		Set<String> plain = new LinkedHashSet<>();
 		for (String raw : selectedDetails)
 		{
 			if (raw == null)
+			{
 				continue;
+			}
 			String text = Text.removeTags(raw).trim();
 			boolean explicit = text.matches("(?i)^(applicant|name)\\s*:.*");
 			// Numeric-only unlabeled strings are normally OSRS skill levels,
 			// not names. Explicit "Applicant: 123" still supports numeric RSNs.
 			if (!explicit && text.matches("[0-9]+"))
+			{
 				continue;
+			}
 			String candidate = extractExactName(text);
 			if (candidate == null)
+			{
 				continue;
+			}
 			if (explicit)
+			{
 				labeled.add(candidate);
+			}
 			else
+			{
 				plain.add(candidate);
+			}
 		}
 		if (labeled.size() > 1)
+		{
 			return null;
+		}
 		if (labeled.size() == 1)
+		{
 			return labeled.iterator().next();
+		}
 		return plain.size() == 1 ? plain.iterator().next() : null;
 	}
 
@@ -114,16 +142,24 @@ final class FederationApplicantGuard
 	static boolean hasSelectedIdentityEvidence(List<String> selectedDetails)
 	{
 		if (selectedDetails == null)
+		{
 			return false;
+		}
 		for (String raw : selectedDetails)
 		{
 			if (raw == null)
+			{
 				continue;
+			}
 			String value = Text.removeTags(raw).trim();
 			if (!value.matches("(?i)^(applicant|name)\\s*:.*") && value.matches("[0-9]+"))
+			{
 				continue;
+			}
 			if (extractExactName(value) != null)
+			{
 				return true;
+			}
 		}
 		return false;
 	}
@@ -131,17 +167,25 @@ final class FederationApplicantGuard
 	static String extractExactName(String source)
 	{
 		if (source == null)
+		{
 			return null;
+		}
 		String clean = Text.removeTags(source).trim();
 		clean = clean.replaceFirst("(?i)^(?:applicant|name)\\s*:\\s*", "");
 		int detail = clean.indexOf(" (level-");
 		if (detail < 0)
+		{
 			detail = clean.indexOf(" (skill-");
+		}
 		if (detail >= 0)
+		{
 			clean = clean.substring(0, detail);
+		}
 		int chapter = clean.indexOf(" [");
 		if (chapter >= 0)
+		{
 			clean = clean.substring(0, chapter);
+		}
 		clean = clean.trim();
 		// UI placeholders, action labels and skill/tooltips are not player names.
 		if (clean.isEmpty() || clean.matches("[-_ ]+") ||
@@ -152,7 +196,9 @@ final class FederationApplicantGuard
 						  + "mining|smithing|crafting|agility|thieving|farming|herblore|slayer|"
 						  + "hunter|construction|firemaking|runecraft|overall|members|apply|"
 						  + "invitation|skills)$"))
+		{
 			return null;
+		}
 		return FederationBanRegistry.validName(clean);
 	}
 

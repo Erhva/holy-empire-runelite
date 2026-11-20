@@ -48,9 +48,13 @@ public class FederationBanOkHttpTest
 				new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
 			exchange.getResponseHeaders().add("Content-Type", "application/json");
 			if (retryAfter != null)
+			{
 				exchange.getResponseHeaders().add("Retry-After", retryAfter);
+			}
 			if (responseCode >= 300 && responseCode < 400)
+			{
 				exchange.getResponseHeaders().add("Location", "/redirect-target");
+			}
 			byte[] reply = responseBody.getBytes(StandardCharsets.UTF_8);
 			exchange.sendResponseHeaders(responseCode, reply.length);
 			try (java.io.OutputStream out = exchange.getResponseBody())
@@ -81,7 +85,9 @@ public class FederationBanOkHttpTest
 	{
 		System.clearProperty("holyempire.testBanSyncOrigin");
 		if (server != null)
+		{
 			server.stop(0);
+		}
 	}
 
 	@Test

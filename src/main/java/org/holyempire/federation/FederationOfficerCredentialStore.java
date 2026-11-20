@@ -36,14 +36,18 @@ final class FederationOfficerCredentialStore
 	{
 		String normalized = WomDirectoryClient.normalize(account);
 		if (normalized == null || normalized.isEmpty() || normalized.length() > 32)
+		{
 			throw new IOException("Verified officer account required");
+		}
 		try
 		{
 			byte[] digest = MessageDigest.getInstance("SHA-256").digest(
 				normalized.getBytes(StandardCharsets.UTF_8));
 			StringBuilder hex = new StringBuilder(64);
 			for (byte b : digest)
+			{
 				hex.append(String.format(java.util.Locale.ROOT, "%02x", b & 255));
+			}
 			return hex + ".key";
 		}
 		catch (java.security.NoSuchAlgorithmException ex)
@@ -60,18 +64,26 @@ final class FederationOfficerCredentialStore
 	private static boolean valid(char[] token)
 	{
 		if (token == null || token.length < 24 || token.length > 256)
+		{
 			return false;
+		}
 		for (char c : token)
+		{
 			if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
 				  c == '_' || c == '-'))
+			{
 				return false;
+			}
+		}
 		return true;
 	}
 
 	synchronized void save(String account, char[] credential) throws IOException
 	{
 		if (!valid(credential))
+		{
 			throw new IOException("Invalid credential format or length");
+		}
 		Filepath target = pathFor(account);
 		root.createDirectories();
 		Filepath temporary = root.createTempFile(".officer-", ".tmp");
@@ -85,7 +97,9 @@ final class FederationOfficerCredentialStore
 			{
 				ByteBuffer data = ByteBuffer.wrap(raw);
 				while (data.hasRemaining())
+				{
 					out.write(data);
+				}
 				out.force(true);
 			}
 			try
@@ -111,18 +125,26 @@ final class FederationOfficerCredentialStore
 		{
 			Filepath path = pathFor(account);
 			if (!path.isFile() || path.size() < 24 || path.size() > 256)
+			{
 				return "";
+			}
 			// A malformed or externally symlinked file may never redirect reads.
 			try (FileChannel input =
 					 path.openFileChannel(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS))
 			{
 				long length = input.size();
 				if (length < 24 || length > 256)
+				{
 					return "";
+				}
 				ByteBuffer bytes = ByteBuffer.allocate((int)length);
 				while (bytes.hasRemaining())
+				{
 					if (input.read(bytes) < 0)
+					{
 						return "";
+					}
+				}
 				String token = new String(bytes.array(), StandardCharsets.UTF_8);
 				return valid(token.toCharArray()) ? token : "";
 			}

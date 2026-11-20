@@ -23,12 +23,16 @@ public class FederationSidebarLinksTest
 		for (Component c : root.getComponents())
 		{
 			if (name.equals(c.getName()))
+			{
 				return c;
+			}
 			if (c instanceof Container)
 			{
 				Component found = named((Container)c, name);
 				if (found != null)
+				{
 					return found;
+				}
 			}
 		}
 		return null;
@@ -83,7 +87,9 @@ public class FederationSidebarLinksTest
 				java.awt.event.MouseEvent event = new java.awt.event.MouseEvent(
 					button, java.awt.event.MouseEvent.MOUSE_ENTERED, 0, 0, 5, 5, 0, false);
 				for (java.awt.event.MouseListener listener : button.getMouseListeners())
+				{
 					listener.mouseEntered(event);
+				}
 				assertEquals(Boolean.TRUE, button.getClientProperty("holyEmpireHover"));
 				// Testing the actual pixels prevents a regression where the RuneLite
 				// LAF colors only the inset content area, not the whole 31x31 square.
@@ -104,7 +110,9 @@ public class FederationSidebarLinksTest
 				event = new java.awt.event.MouseEvent(
 					button, java.awt.event.MouseEvent.MOUSE_EXITED, 0, 0, 5, 5, 0, false);
 				for (java.awt.event.MouseListener listener : button.getMouseListeners())
+				{
 					listener.mouseExited(event);
+				}
 				assertEquals(Boolean.FALSE, button.getClientProperty("holyEmpireHover"));
 				assertFalse("Native content painting must stay off", button.isContentAreaFilled());
 			}

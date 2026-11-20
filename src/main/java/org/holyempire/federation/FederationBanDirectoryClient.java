@@ -75,11 +75,17 @@ final class FederationBanDirectoryClient
 	{
 		String approvedChapter = FederationBanRegistry.officialChapter(chapter);
 		if (approvedChapter == null)
+		{
 			throw new IllegalArgumentException("Unknown chapter.");
+		}
 		if (!FederationBanUploadClient.acceptedEndpoint(base))
+		{
 			throw new IllegalArgumentException("Official HTTPS ban endpoint required.");
+		}
 		if (bearer == null || bearer.length() < 24 || bearer.length() > 256)
+		{
 			throw new IllegalArgumentException("Officer credential is missing.");
+		}
 		JsonObject requestJson = new JsonObject();
 		requestJson.addProperty("chapter", approvedChapter);
 		requestJson.addProperty("mode", "list");
@@ -100,18 +106,24 @@ final class FederationBanDirectoryClient
 		try (Response response = bounded.newCall(request).execute())
 		{
 			if (response.code() != 200)
+			{
 				throw new IOException("Private ban directory returned HTTP " + response.code() +
 									  ".");
+			}
 			ResponseBody body = response.body();
 			if (body == null || body.contentLength() > MAX_RESPONSE)
+			{
 				throw new IOException("Private ban directory response too large.");
+			}
 			byte[] bytes;
 			try (InputStream stream = body.byteStream())
 			{
 				bytes = stream.readNBytes(MAX_RESPONSE + 1);
 			}
 			if (bytes.length > MAX_RESPONSE)
+			{
 				throw new IOException("Private ban directory response too large.");
+			}
 			try
 			{
 				JsonObject document = new JsonParser()
@@ -119,12 +131,16 @@ final class FederationBanDirectoryClient
 										  .getAsJsonObject();
 				if (document.get("schema_version").getAsInt() != 1 ||
 					!"ban-list".equals(document.get("kind").getAsString()))
+				{
 					throw new IOException("Unexpected private ban directory schema.");
+				}
 				JsonArray rawEntries = document.getAsJsonArray("entries");
 				JsonArray rawChapters = document.getAsJsonArray("snapshots");
 				if (rawEntries == null || rawEntries.size() > MAX_ENTRIES || rawChapters == null ||
 					rawChapters.size() > WomDirectoryClient.GROUPS.length)
+				{
 					throw new IOException("Private ban directory exceeds safe limits.");
+				}
 				Map<String, Chapter> chapters = new LinkedHashMap<>();
 				for (JsonElement element : rawChapters)
 				{
@@ -134,7 +150,9 @@ final class FederationBanDirectoryClient
 					int revision = row.get("revision").getAsInt();
 					if (FederationBanRegistry.officialChapter(chapterName) == null || when <= 0 ||
 						revision < 1 || chapters.containsKey(chapterName))
+					{
 						throw new IOException("Invalid chapter snapshot metadata.");
+					}
 					chapters.put(chapterName, new Chapter(chapterName, when, revision));
 				}
 				List<Entry> entries = new ArrayList<>();
@@ -149,7 +167,9 @@ final class FederationBanDirectoryClient
 						FederationBanRegistry.validName(name) == null ||
 						!(identity.equals("tracked") || identity.equals("unresolved")) ||
 						when != chapters.get(from).capturedAt)
+					{
 						throw new IOException("Invalid private ban directory entry.");
+					}
 					entries.add(new Entry(from, name, identity, when));
 				}
 				return new Snapshot(entries, chapters);

@@ -49,25 +49,35 @@ public final class FederationApplicantOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
+		{
 			return null;
+		}
 		Widget frame = client.getWidget(InterfaceID.ClansApplicants.FRAME);
 		if (frame == null || frame.isHidden())
+		{
 			return null;
+		}
 		Rectangle bounds = frame.getBounds();
 		if (bounds == null || bounds.width < 150)
+		{
 			return null;
+		}
 		FederationBanDirectoryClient.Snapshot approved = plugin.officerDirectoryForApplicants();
 		// Only paint confirmed matches. The old generic "checking applicants"
 		// banner obscured the game's invitation/selection controls on every screen.
 		if (approved == null)
+		{
 			return null;
+		}
 
 		Widget applicantList = client.getWidget(InterfaceID.ClansApplicants.LIST_CONTAINER);
 		Set<String> located = new HashSet<>();
 		int matches = markApplicantRows(graphics, applicantList, approved, located, 0);
 		if (matches == 0)
+		{
 			markApplicantRows(graphics, client.getWidget(InterfaceID.ClansApplicants.LIST),
 							  approved, located, 0);
+		}
 
 		// Display the warning immediately to the RIGHT of the selected player's
 		// name at the TOP of the right-hand details pane. Never cover stat icons.
@@ -119,7 +129,9 @@ public final class FederationApplicantOverlay extends Overlay
 	static Rectangle findSelectedNameBounds(Widget widget, Rectangle pane, String name, int depth)
 	{
 		if (widget == null || widget.isHidden() || depth > 7)
+		{
 			return null;
+		}
 		Rectangle best = null;
 		String text = FederationApplicantGuard.extractExactName(widget.getText());
 		Rectangle bounds = widget.getBounds();
@@ -132,13 +144,17 @@ public final class FederationApplicantOverlay extends Overlay
 		}
 		Widget[] children = widget.getChildren();
 		if (children != null)
+		{
 			for (Widget child : children)
 			{
 				Rectangle found = findSelectedNameBounds(child, pane, name, depth + 1);
 				if (found != null && (best == null || (long)found.width * found.height <
 														  (long)best.width * best.height))
+				{
 					best = found;
+				}
 			}
+		}
 		return best;
 	}
 
@@ -153,7 +169,9 @@ public final class FederationApplicantOverlay extends Overlay
 		int estimatedRight = pane.x + pane.width / 2 + Math.max(65, (int)(nameWidth * 1.15f)) + 12;
 		int x = estimatedRight;
 		if (nameBounds != null && nameBounds.width < pane.width * 0.55f)
+		{
 			x = Math.max(estimatedRight, nameBounds.x + nameBounds.width + 9);
+		}
 		x = Math.min(pane.x + pane.width - badgeWidth - 8, Math.max(pane.x + 8, x));
 		// The native name row is between the top Skill total button and the
 		// lower Skill total summary. Shift slightly below the pane top to align
@@ -167,11 +185,15 @@ public final class FederationApplicantOverlay extends Overlay
 								 int depth)
 	{
 		if (current == null || current.isHidden() || depth > 7 || seen.size() > 75)
+		{
 			return 0;
+		}
 		int count = 0;
 		String text = current.getText();
 		if (text == null || text.isEmpty())
+		{
 			text = current.getName();
+		}
 		String name = FederationApplicantGuard.extractExactName(text);
 		if (name != null &&
 			!FederationRecruitmentGuard.matchingChapters(approved, name).isEmpty() &&
@@ -191,8 +213,12 @@ public final class FederationApplicantOverlay extends Overlay
 		}
 		Widget[] children = current.getChildren();
 		if (children != null)
+		{
 			for (Widget child : children)
+			{
 				count += markApplicantRows(g, child, approved, seen, depth + 1);
+			}
+		}
 		return count;
 	}
 }

@@ -25,9 +25,13 @@ public class RosterEndpointTest
 	@After public void restoreOverride()
 	{
 		if (previous == null)
+		{
 			System.clearProperty("holyempire.rosterBaseUrl");
+		}
 		else
+		{
 			System.setProperty("holyempire.rosterBaseUrl", previous);
+		}
 	}
 
 	@Test

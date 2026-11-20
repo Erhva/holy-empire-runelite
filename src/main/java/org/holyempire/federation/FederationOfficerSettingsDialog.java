@@ -106,7 +106,9 @@ final class FederationOfficerSettingsDialog
 					 BiConsumer<Component, Consumer<String>> reviewRequests)
 	{
 		if (!authorized.getAsBoolean())
+		{
 			return;
+		}
 		JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(parent), "Admin Verification",
 									 Dialog.ModalityType.APPLICATION_MODAL);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -137,9 +139,13 @@ final class FederationOfficerSettingsDialog
 				}
 			};
 			if (SwingUtilities.isEventDispatchThread())
+			{
 				update.run();
+			}
 			else
+			{
 				SwingUtilities.invokeLater(update);
+			}
 		};
 
 		Runnable save = () ->
@@ -160,7 +166,9 @@ final class FederationOfficerSettingsDialog
 				try
 				{
 					if (password.length > 0)
+					{
 						secrets.save(account, password);
+					}
 				}
 				catch (IOException error)
 				{
@@ -190,7 +198,9 @@ final class FederationOfficerSettingsDialog
 				requestVerification.accept(dialog, feedback);
 			}
 			else
+			{
 				feedback.accept("Officer access is no longer available.");
+			}
 		};
 		Runnable check = checkVerification == null ? null : () ->
 		{
@@ -200,7 +210,9 @@ final class FederationOfficerSettingsDialog
 				checkVerification.accept(dialog, feedback);
 			}
 			else
+			{
 				feedback.accept("Officer access is no longer available.");
+			}
 		};
 		Runnable review = reviewRequests == null ? null : () ->
 		{
@@ -210,7 +222,9 @@ final class FederationOfficerSettingsDialog
 				reviewRequests.accept(dialog, feedback);
 			}
 			else
+			{
 				feedback.accept("Officer access is no longer available.");
+			}
 		};
 		JPanel actions = actionButtons(save, request, check, review, dialog::dispose);
 

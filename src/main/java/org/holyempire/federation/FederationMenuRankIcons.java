@@ -24,14 +24,18 @@ final class FederationMenuRankIcons
 	static String apply(String text, int iconIndex, Set<Integer> owned, boolean enabled)
 	{
 		if (text == null)
+		{
 			return null;
+		}
 		String cleaned = text;
 		// Remove only our prior prefix (not a native icon following it).
 		while (cleaned.startsWith("<img="))
 		{
 			int end = cleaned.indexOf('>');
 			if (end < 0 || end > 16)
+			{
 				break;
+			}
 			int index;
 			try
 			{
@@ -42,7 +46,9 @@ final class FederationMenuRankIcons
 				break;
 			}
 			if (!owned.contains(index))
+			{
 				break;
+			}
 			cleaned = cleaned.substring(end + 1);
 		}
 		// Also clean up tags produced by earlier developer versions that embedded
@@ -60,8 +66,10 @@ final class FederationMenuRankIcons
 				prior = -1;
 			}
 			if (owned.contains(prior))
+			{
 				cleaned =
 					cleaned.substring(0, old.start()) + old.group(1) + cleaned.substring(old.end());
+			}
 		}
 		return enabled && iconIndex >= 0 ? "<img=" + iconIndex + ">" + cleaned : cleaned;
 	}

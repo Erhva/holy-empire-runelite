@@ -26,13 +26,21 @@ public class ClanVexillumEquipTriggerTest
 			ItemContainer.class.getClassLoader(), new Class[] {ItemContainer.class},
 			(proxy, method, args) -> {
 				if (method.getName().equals("getItems"))
+				{
 					return slots;
+				}
 				if (method.getName().equals("getId"))
+				{
 					return InventoryID.EQUIPMENT.getId();
+				}
 				if (method.getReturnType() == boolean.class)
+				{
 					return false;
+				}
 				if (method.getReturnType() == int.class)
+				{
 					return 0;
+				}
 				return null;
 			});
 	}

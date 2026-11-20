@@ -42,7 +42,9 @@ public class FederationBanDirectoryClientTest
 				new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
 			authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
 			if (responseCode == 302)
+			{
 				exchange.getResponseHeaders().set("Location", "/redirect");
+			}
 			byte[] data = body.getBytes(StandardCharsets.UTF_8);
 			exchange.sendResponseHeaders(responseCode, data.length);
 			try (java.io.OutputStream out = exchange.getResponseBody())
@@ -74,7 +76,9 @@ public class FederationBanDirectoryClientTest
 	{
 		System.clearProperty("holyempire.testBanSyncOrigin");
 		if (server != null)
+		{
 			server.stop(0);
+		}
 	}
 
 	@Test

@@ -44,7 +44,9 @@ final class ClanVexillumEquipTrigger
 	boolean onContainerChanged(int containerId, ItemContainer equipment, long now)
 	{
 		if (containerId != InventoryID.EQUIPMENT.getId() || equipment == null)
+		{
 			return false;
+		}
 		Item[] items = equipment.getItems();
 		int weaponIndex = EquipmentInventorySlot.WEAPON.getSlotIdx();
 		boolean nowEquipped = items != null && items.length > weaponIndex &&
@@ -53,10 +55,14 @@ final class ClanVexillumEquipTrigger
 		boolean newlyEquipped = nowEquipped && !equipped;
 		equipped = nowEquipped;
 		if (!newlyEquipped)
+		{
 			return false;
+		}
 		if (lastTriggeredAt >= 0 && now >= lastTriggeredAt &&
 			now - lastTriggeredAt < MIN_INTERVAL_MS)
+		{
 			return false;
+		}
 		lastTriggeredAt = now;
 		return true;
 	}

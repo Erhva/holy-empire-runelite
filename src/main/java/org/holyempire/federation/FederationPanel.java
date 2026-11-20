@@ -63,9 +63,13 @@ public class FederationPanel extends PluginPanel
 	{
 		if (!officerSettingsEligible || !verified || banDirectoryLoader == null ||
 			banDirectoryLoading)
+		{
 			return;
+		}
 		if (!force && banCacheFresh())
+		{
 			return;
+		}
 		banDirectory = null;
 		banDirectoryCachedAt = 0;
 		banDirectoryError = null;
@@ -92,7 +96,9 @@ public class FederationPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() -> {
 			if (!verified || !officerSettingsEligible || !stillAuthorized.getAsBoolean())
+			{
 				return;
+			}
 			banDirectory = snapshot;
 			banDirectoryCachedAt = System.currentTimeMillis();
 			banDirectoryError = null;
@@ -105,7 +111,9 @@ public class FederationPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() -> {
 			if (!verified || !officerSettingsEligible || !stillAuthorized.getAsBoolean())
+			{
 				return;
+			}
 			banDirectory = null;
 			banDirectoryCachedAt = 0;
 			banDirectoryLoading = false;
@@ -117,7 +125,9 @@ public class FederationPanel extends PluginPanel
 	FederationBanDirectoryClient.Snapshot freshRecruitmentBanDirectory()
 	{
 		if (!verified || !officerSettingsEligible || !banCacheFresh())
+		{
 			return null;
+		}
 		return banDirectory;
 	}
 
@@ -140,19 +150,29 @@ public class FederationPanel extends PluginPanel
 	void setOfficerSettingsEligible(boolean eligible)
 	{
 		if (officerSettingsRequested == eligible)
+		{
 			return;
+		}
 		officerSettingsRequested = eligible;
 		SwingUtilities.invokeLater(() -> {
 			// An older queued grant must not restore officer controls after rank loss.
 			if (officerSettingsEligible == officerSettingsRequested)
+			{
 				return;
+			}
 			officerSettingsEligible = officerSettingsRequested;
 			if (!officerSettingsEligible)
+			{
 				clearPrivateBanDirectory();
+			}
 			if (verified)
+			{
 				refresh();
+			}
 			if (officerSettingsEligible && verified)
+			{
 				requestBanDirectory(false);
+			}
 		});
 	}
 
@@ -167,7 +187,9 @@ public class FederationPanel extends PluginPanel
 			banRegistry.clear();
 			clearPrivateBanDirectory();
 			if (verified)
+			{
 				refresh();
+			}
 		});
 	}
 
@@ -271,7 +293,9 @@ public class FederationPanel extends PluginPanel
 		});
 		banListTab.addActionListener(e -> {
 			if (!officerSettingsEligible || !verified)
+			{
 				return;
+			}
 			showingBans = true;
 			selectedChapter = null;
 			refresh();
@@ -291,7 +315,9 @@ public class FederationPanel extends PluginPanel
 				banDirectory = null;
 				banDirectoryCachedAt = 0;
 				if (verified && officerSettingsEligible)
+				{
 					requestBanDirectory(false);
+				}
 			}
 		});
 		privateCacheTimer.start();
@@ -466,10 +492,14 @@ public class FederationPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() -> {
 			if (previewUnverifiedScreen == enabled)
+			{
 				return;
+			}
 			previewUnverifiedScreen = enabled;
 			if (enabled)
+			{
 				selectedChapter = null;
+			}
 			refresh();
 		});
 	}
@@ -483,7 +513,9 @@ public class FederationPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() -> {
 			if (!stillCurrent.getAsBoolean())
+			{
 				return;
+			}
 			verified = false;
 			denied = false;
 			banRegistry.clear();
@@ -508,7 +540,9 @@ public class FederationPanel extends PluginPanel
 	{
 		SwingUtilities.invokeLater(() -> {
 			if (!stillCurrent.getAsBoolean())
+			{
 				return;
+			}
 			verified = false;
 			denied = true;
 			banRegistry.clear();
@@ -549,7 +583,9 @@ public class FederationPanel extends PluginPanel
 		Set<String> safeHashes = Collections.unmodifiableSet(new HashSet<>(publicWarningHashes));
 		SwingUtilities.invokeLater(() -> {
 			if (!stillAuthorized.getAsBoolean())
+			{
 				return;
+			}
 			verified = true;
 			denied = false;
 			members = new HashMap<>(roster);
@@ -559,7 +595,9 @@ public class FederationPanel extends PluginPanel
 			emptyMessage = "No roster loaded";
 			refresh();
 			if (officerSettingsEligible)
+			{
 				requestBanDirectory(false);
+			}
 		});
 	}
 
@@ -586,7 +624,9 @@ public class FederationPanel extends PluginPanel
 		{
 			if (WomDirectoryClient.normalize(chapterMember.name)
 					.equals(WomDirectoryClient.normalize(player)))
+			{
 				return chapterMember;
+			}
 		}
 		return null;
 	}
@@ -704,7 +744,9 @@ public class FederationPanel extends PluginPanel
 	private void addOfficerSettingsAction()
 	{
 		if (!officerSettingsEligible || !verified || officerSettingsOpener == null)
+		{
 			return;
+		}
 		JButton officerSettings = HolyEmpireTheme.button("Admin Verification", true);
 		officerSettings.setName("holyEmpireOfficerBanSettings");
 		officerSettings.setToolTipText(
@@ -714,7 +756,9 @@ public class FederationPanel extends PluginPanel
 			new Dimension(Integer.MAX_VALUE, officerSettings.getPreferredSize().height + 4));
 		officerSettings.addActionListener(e -> {
 			if (officerSettingsEligible && verified && officerSettingsOpener != null)
+			{
 				officerSettingsOpener.run();
+			}
 		});
 		addAligned(officerSettings);
 		content.add(Box.createVerticalStrut(4));
@@ -758,12 +802,18 @@ public class FederationPanel extends PluginPanel
 			List<String> matches = HolyEmpireRosterIndex.search(members, query);
 			heading("Global results · " + matches.size(), 12);
 			for (int i = 0; i < Math.min(matches.size(), SEARCH_PREVIEW_LIMIT); i++)
+			{
 				addGlobalResult(matches.get(i));
+			}
 			if (matches.isEmpty())
+			{
 				addAligned(new JLabel("No matching members or chapters."));
+			}
 			if (matches.size() > SEARCH_PREVIEW_LIMIT)
+			{
 				addAligned(
 					new JLabel("Showing " + SEARCH_PREVIEW_LIMIT + "; refine search for more."));
+			}
 		}
 		heading("Holy Empire Clan Chapters", 13);
 		for (HolyEmpireChapterCatalog.Chapter info : HolyEmpireChapterCatalog.ORDERED)
@@ -805,9 +855,13 @@ public class FederationPanel extends PluginPanel
 			count.setName("holyEmpireChapterCount:" + clan);
 			chapter.add(count, BorderLayout.EAST);
 			if (!info.hasWomRoster())
+			{
 				chapter.setToolTipText("No Wise Old Man group configured for " + clan);
+			}
 			else
+			{
 				chapter.setToolTipText(clan + " · " + roster.size() + " members");
+			}
 			chapter.addActionListener(e -> {
 				selectedChapter = clan;
 				chapterSearch.setText("");
@@ -869,9 +923,13 @@ public class FederationPanel extends PluginPanel
 			HolyEmpireRosterIndex.searchChapter(sorted, chapterSearch.getText());
 		heading("Roster · " + filtered.size() + " / " + all.size(), 12);
 		if (filtered.isEmpty())
+		{
 			addAligned(new JLabel("No matching members."));
+		}
 		for (WomDirectoryClient.ChapterMember member : filtered)
+		{
 			addRankRow(member);
+		}
 		setStatus(clan + " · WOM rank order" + (cachedStale ? " · cached" : ""),
 				  "<html>" + clan + "<br>WOM rank order" + (cachedStale ? " · cached" : "") +
 					  "</html>");
@@ -885,13 +943,17 @@ public class FederationPanel extends PluginPanel
 	private List<FederationBanDirectoryClient.Entry> filteredBans(String chapter, String query)
 	{
 		if (banDirectory == null)
+		{
 			return Collections.emptyList();
+		}
 		List<FederationBanDirectoryClient.Entry> selected = new ArrayList<>();
 		for (FederationBanDirectoryClient.Entry entry : banDirectory.entries)
 		{
 			if ((chapter == null || chapter.equals(entry.chapter)) &&
 				banNameMatches(entry.name, query))
+			{
 				selected.add(entry);
+			}
 		}
 		selected.sort(
 			Comparator
@@ -962,12 +1024,18 @@ public class FederationPanel extends PluginPanel
 			List<FederationBanDirectoryClient.Entry> matches = filteredBans(null, search);
 			heading("Combined results · " + matches.size(), 12);
 			if (matches.isEmpty())
+			{
 				addAligned(new JLabel("No matches in synchronized ban lists."));
+			}
 			for (int i = 0; i < Math.min(matches.size(), SEARCH_PREVIEW_LIMIT); i++)
+			{
 				addBanEntry(matches.get(i), true);
+			}
 			if (matches.size() > SEARCH_PREVIEW_LIMIT)
+			{
 				addAligned(
 					new JLabel("Showing " + SEARCH_PREVIEW_LIMIT + "; refine search for more."));
+			}
 		}
 		else
 		{
@@ -978,8 +1046,12 @@ public class FederationPanel extends PluginPanel
 				FederationBanDirectoryClient.Chapter snapshot = banDirectory.chapters.get(chapter);
 				int count = 0;
 				for (FederationBanDirectoryClient.Entry entry : banDirectory.entries)
+				{
 					if (entry.chapter.equals(chapter))
+					{
 						count++;
+					}
+				}
 				JButton chapterButton = HolyEmpireTheme.button("", true);
 				chapterButton.setName("holyEmpireBanChapter:" + chapter);
 				chapterButton.setLayout(new BorderLayout(7, 0));
@@ -1048,11 +1120,17 @@ public class FederationPanel extends PluginPanel
 		int total = filteredBans(chapter, "").size();
 		heading("Ban list · " + entries.size() + " / " + total, 12);
 		if (entries.isEmpty())
+		{
 			addAligned(new JLabel("No matching bans."));
+		}
 		for (int i = 0; i < Math.min(entries.size(), SEARCH_PREVIEW_LIMIT); i++)
+		{
 			addBanEntry(entries.get(i), false);
+		}
 		if (entries.size() > SEARCH_PREVIEW_LIMIT)
+		{
 			addAligned(new JLabel("Showing " + SEARCH_PREVIEW_LIMIT + "; refine search for more."));
+		}
 		setStatus(chapter + " · revision " + capture.revision + " · authorized private cache",
 				  chapter + " · " + total + " bans");
 	}
@@ -1062,7 +1140,9 @@ public class FederationPanel extends PluginPanel
 		content.removeAll();
 		boolean unverified = !verified || previewUnverifiedScreen;
 		if (!officerSettingsEligible && showingBans)
+		{
 			clearPrivateBanDirectory();
+		}
 		navigationTabs.setVisible(!unverified);
 		boolean showOfficerTab = officerSettingsEligible && !unverified;
 		banListTab.setVisible(showOfficerTab);
@@ -1102,15 +1182,25 @@ public class FederationPanel extends PluginPanel
 		// the loading text. Showing the footer would duplicate that message.
 		status.setVisible(verified && !denied && !previewUnverifiedScreen);
 		if (unverified)
+		{
 			showUnavailable();
+		}
 		else if (showingBans && selectedBanChapter != null)
+		{
 			showBanChapter();
+		}
 		else if (showingBans)
+		{
 			showBans();
+		}
 		else if (selectedChapter == null)
+		{
 			showHome();
+		}
 		else
+		{
 			showChapter();
+		}
 		content.revalidate();
 		content.repaint();
 		revalidate();

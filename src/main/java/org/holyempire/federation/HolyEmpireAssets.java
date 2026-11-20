@@ -35,10 +35,14 @@ final class HolyEmpireAssets
 			try (InputStream in = HolyEmpireAssets.class.getResourceAsStream(key))
 			{
 				if (in == null)
+				{
 					return MISSING;
+				}
 				BufferedImage png = ImageIO.read(in);
 				if (png == null)
+				{
 					return MISSING;
+				}
 				if (key.startsWith("/chapter-icons/"))
 				{
 					BufferedImage square = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
@@ -70,10 +74,14 @@ final class HolyEmpireAssets
 	static Icon socialIcon(String name)
 	{
 		if (!"discord".equals(name) && !"clanfinder".equals(name))
+		{
 			return null;
+		}
 		Icon source = load("/social-icons/" + name + ".png");
 		if (source == MISSING || !(source instanceof ImageIcon))
+		{
 			return null;
+		}
 		BufferedImage scaled = new BufferedImage(22, 22, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphic = scaled.createGraphics();
 		graphic.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
@@ -91,7 +99,9 @@ final class HolyEmpireAssets
 		{
 			Icon original = load("/rank-icons/emperor-not-needed.png");
 			if (original == MISSING)
+			{
 				return null;
+			}
 			BufferedImage small = new BufferedImage(18, 18, BufferedImage.TYPE_INT_ARGB);
 			Graphics2D graphics = small.createGraphics();
 			graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
@@ -110,10 +120,14 @@ final class HolyEmpireAssets
 	static Icon rankIcon(String rawRank)
 	{
 		if (rawRank == null || rawRank.trim().isEmpty())
+		{
 			return null;
+		}
 		String slug = rawRank.toLowerCase(Locale.ROOT).trim().replaceAll("[^a-z0-9]+", "-");
 		if (slug.isEmpty() || slug.equals("unranked"))
+		{
 			return null;
+		}
 		Icon icon = load("/rank-icons/" + slug + ".png");
 		return icon == MISSING ? null : icon;
 	}

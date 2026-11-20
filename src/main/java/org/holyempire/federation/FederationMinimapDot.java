@@ -23,7 +23,9 @@ final class FederationMinimapDot
 	static void draw(Graphics2D graphics, int x, int y, Color color)
 	{
 		if (color == null)
+		{
 			return;
+		}
 		final int left = x - 2, top = y - 2;
 		graphics.setColor(color);
 		graphics.fillRect(left + 1, top, 2, 1);

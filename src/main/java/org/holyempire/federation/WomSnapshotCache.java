@@ -63,11 +63,15 @@ final class WomSnapshotCache
 		}
 		long age = now - fetchedAt;
 		if (!force && cached != null && age >= 0 && age < FRESH_MS)
+		{
 			return new Result(cached, false);
+		}
 		if (now < retryAt)
 		{
 			if (cached != null && age >= 0 && age < MAX_STALE_MS)
+			{
 				return new Result(cached, true);
+			}
 			throw new IOException("WOM request cooldown active");
 		}
 		try
@@ -75,7 +79,9 @@ final class WomSnapshotCache
 			WomDirectoryClient.Snapshot current = fetcher.load();
 			if (current == null || current.members.isEmpty() ||
 				current.chapters.size() != WomDirectoryClient.GROUPS.length)
+			{
 				throw new IOException("Incomplete WOM roster snapshot");
+			}
 			cached = current;
 			fetchedAt = current.sourceTimestampMs > 0 ? current.sourceTimestampMs : now;
 			retryAt = 0;
@@ -95,13 +101,17 @@ final class WomSnapshotCache
 		{
 			long delay = FAILURE_BACKOFF_MS;
 			if (failure instanceof WomDirectoryClient.RateLimited)
+			{
 				delay = Math.max(delay, ((WomDirectoryClient.RateLimited)failure).retryMillis);
+			}
 			retryAt = now + delay;
 			org.slf4j.LoggerFactory.getLogger(WomSnapshotCache.class)
 				.warn("WOM roster refresh failed; retry in at least {} seconds: {}", delay / 1000,
 					  failure.toString());
 			if (cached != null && age >= 0 && age < MAX_STALE_MS)
+			{
 				return new Result(cached, true);
+			}
 			throw failure;
 		}
 	}
@@ -111,43 +121,63 @@ final class WomSnapshotCache
 		try
 		{
 			if (!path.isFile() || path.size() > FILE_LIMIT)
+			{
 				return;
+			}
 			byte[] bytes;
 			try (FileChannel input =
 					 path.openFileChannel(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS))
 			{
 				long size = input.size();
 				if (size < 1 || size > FILE_LIMIT)
+				{
 					return;
+				}
 				ByteBuffer buffer = ByteBuffer.allocate((int)size);
 				while (buffer.hasRemaining())
+				{
 					if (input.read(buffer) < 0)
+					{
 						return;
+					}
+				}
 				bytes = buffer.array();
 			}
 			JsonObject document =
 				new JsonParser().parse(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
 			if (document.get("schema").getAsInt() != 1)
+			{
 				return;
+			}
 			// Old disk caches cannot supply nonmember ban warnings. Fetch the
 			// upgraded manifest once rather than appearing silently clear for hours.
 			if (!document.has("publicBanWarningsAvailable"))
+			{
 				return;
+			}
 			long timestamp = document.get("fetchedAt").getAsLong();
 			if (timestamp > now || now - timestamp > MAX_STALE_MS)
+			{
 				return;
+			}
 			JsonArray groups = document.getAsJsonArray("groups");
 			if (groups == null || groups.size() != WomDirectoryClient.GROUPS.length)
+			{
 				return;
+			}
 			Map<String, Set<String>> combined = new HashMap<>();
 			Map<String, List<WomDirectoryClient.ChapterMember>> chapters = new LinkedHashMap<>();
 			for (int i = 0; i < groups.size(); i++)
+			{
 				WomDirectoryClient.mergeGroup(groups.get(i).getAsJsonObject(), i, combined,
 											  chapters);
+			}
 			Map<String, List<String>> members = new HashMap<>();
 			for (Map.Entry<String, Set<String>> entry : combined.entrySet())
+			{
 				members.put(entry.getKey(),
 							Collections.unmodifiableList(new ArrayList<>(entry.getValue())));
+			}
 			Set<String> publicHashes = new HashSet<>();
 			boolean warningAvailable = document.has("publicBanWarningsAvailable") &&
 									   document.get("publicBanWarningsAvailable").getAsBoolean();
@@ -155,12 +185,16 @@ final class WomSnapshotCache
 			{
 				JsonArray digests = document.getAsJsonArray("publicBanDigests");
 				if (digests == null || digests.size() > 5000)
+				{
 					return;
+				}
 				for (JsonElement item : digests)
 				{
 					String digest = item.getAsString();
 					if (!digest.matches("[0-9a-f]{64}") || !publicHashes.add(digest))
+					{
 						return;
+					}
 				}
 			}
 			cached = new WomDirectoryClient.Snapshot(Collections.unmodifiableMap(members),
@@ -188,7 +222,9 @@ final class WomSnapshotCache
 			List<WomDirectoryClient.ChapterMember> roster =
 				snapshot.chapters.get(WomDirectoryClient.CLANS[i]);
 			if (roster == null || roster.isEmpty())
+			{
 				throw new IOException("Missing WOM chapter");
+			}
 			JsonObject group = new JsonObject();
 			group.addProperty("id", WomDirectoryClient.GROUPS[i]);
 			JsonArray memberships = new JsonArray();
@@ -210,12 +246,16 @@ final class WomSnapshotCache
 		{
 			JsonArray digests = new JsonArray();
 			for (String hash : new TreeSet<>(snapshot.publicBanHashes))
+			{
 				digests.add(hash);
+			}
 			document.add("publicBanDigests", digests);
 		}
 		byte[] bytes = document.toString().getBytes(StandardCharsets.UTF_8);
 		if (bytes.length > FILE_LIMIT)
+		{
 			throw new IOException("WOM cache exceeds size limit");
+		}
 		path.getParent().createDirectories();
 		Filepath temp = path.getParent().createTempFile("holy-empire-cache-", ".tmp");
 		try

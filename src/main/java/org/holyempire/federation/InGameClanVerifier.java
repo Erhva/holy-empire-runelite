@@ -25,12 +25,16 @@ final class InGameClanVerifier
 	{
 		String target = WomDirectoryClient.normalize(name);
 		if (target.isEmpty())
+		{
 			return "";
+		}
 		for (int i = 0; i < WomDirectoryClient.CLANS.length; i++)
 		{
 			if (target.equals(WomDirectoryClient.normalize(WomDirectoryClient.CLANS[i])) ||
 				target.equals(WomDirectoryClient.normalize(WomDirectoryClient.CLAN_CHATS[i])))
+			{
 				return WomDirectoryClient.CLANS[i];
+			}
 		}
 		return "";
 	}
@@ -40,10 +44,16 @@ final class InGameClanVerifier
 		String chapter = recognizedChapter(clanName);
 		String expected = WomDirectoryClient.normalize(account);
 		if (chapter.isEmpty() || expected.isEmpty() || memberNames == null)
+		{
 			return "";
+		}
 		for (String memberName : memberNames)
+		{
 			if (expected.equals(WomDirectoryClient.normalize(memberName)))
+			{
 				return chapter;
+			}
+		}
 		return "";
 	}
 
@@ -51,15 +61,21 @@ final class InGameClanVerifier
 	static String chapterFor(ClanSettings settings, String account)
 	{
 		if (settings == null)
+		{
 			return "";
+		}
 		String expected = WomDirectoryClient.normalize(account);
 		if (expected.isEmpty())
+		{
 			return "";
+		}
 		try
 		{
 			String chapter = recognizedChapter(settings.getName());
 			if (chapter.isEmpty())
+			{
 				return "";
+			}
 			// A name index may be unavailable during initial clan loading.
 			// Keep the full native member list as an independent fallback.
 			try
@@ -67,7 +83,9 @@ final class InGameClanVerifier
 				ClanMember direct = settings.findMember(account);
 				if (direct != null &&
 					expected.equals(WomDirectoryClient.normalize(direct.getName())))
+				{
 					return chapter;
+				}
 			}
 			catch (RuntimeException indexUnavailable)
 			{
@@ -75,11 +93,17 @@ final class InGameClanVerifier
 			}
 			List<ClanMember> members = settings.getMembers();
 			if (members == null)
+			{
 				return "";
+			}
 			for (ClanMember member : members)
+			{
 				if (member != null &&
 					expected.equals(WomDirectoryClient.normalize(member.getName())))
+				{
 					return chapter;
+				}
+			}
 		}
 		catch (RuntimeException unavailable)
 		{

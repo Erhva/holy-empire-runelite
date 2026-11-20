@@ -26,7 +26,9 @@ final class FederationPublicBanWarnings
 	static String hash(String name)
 	{
 		if (FederationBanRegistry.validName(name) == null)
+		{
 			return "";
+		}
 		String normalized = WomDirectoryClient.normalize(name);
 		try
 		{
@@ -34,7 +36,9 @@ final class FederationPublicBanWarnings
 				normalized.getBytes(StandardCharsets.UTF_8));
 			StringBuilder result = new StringBuilder(64);
 			for (byte b : data)
+			{
 				result.append(String.format(Locale.ROOT, "%02x", b & 255));
+			}
 			return result.toString();
 		}
 		catch (NoSuchAlgorithmException error)
@@ -47,7 +51,9 @@ final class FederationPublicBanWarnings
 	{
 		String normalized = WomDirectoryClient.normalize(name);
 		if (normalized.isEmpty() || roster.containsKey(normalized))
+		{
 			return false;
+		}
 		return publicHashes.contains(hash(name));
 	}
 
@@ -63,7 +69,9 @@ final class FederationPublicBanWarnings
 	{
 		String player = FederationBanRegistry.validName(name);
 		if (player == null)
+		{
 			return null;
+		}
 		return "HOLY EMPIRE BAN-LIST WARNING\n\n" + player + " appears on a chapter ban-list\n\n"
 			+ "Consult an admin before recruiting";
 	}
@@ -72,7 +80,9 @@ final class FederationPublicBanWarnings
 	{
 		String valid = FederationBanRegistry.validName(name);
 		if (valid == null)
+		{
 			return null;
+		}
 		return "HOLY EMPIRE BAN-LIST WARNING\n\n" + valid +
 			" appears on a synchronized ban list.\n\n"
 			+ "Consult an authorized Owner or Deputy Owner before recruiting.";

@@ -60,7 +60,9 @@ public class FederationBanWidgetCaptureTest
 				int group = ((Integer)a[0]);
 				int child = ((Integer)a[1]);
 				if (group != 689)
+				{
 					return null;
+				}
 				return child == 0 ? page : child == 6 ? bans : null;
 			default:
 				return null;
@@ -121,7 +123,9 @@ public class FederationBanWidgetCaptureTest
 		Widget visible = widget(null, false, null);
 		Widget[] slots = new Widget[1800];
 		for (int i = 0; i < 101; i++)
+		{
 			slots[i * 9] = widget("ban" + i, false, null);
+		}
 		shouldReject(client("Holy Chaos", visible, widget(null, false, slots), true),
 					 "Unexpected number");
 	}

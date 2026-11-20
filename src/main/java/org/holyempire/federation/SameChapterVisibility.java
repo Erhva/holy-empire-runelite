@@ -20,15 +20,23 @@ final class SameChapterVisibility
 	{
 		if (localChapters == null || localChapters.isEmpty() || targetChapters == null ||
 			targetChapters.isEmpty())
+		{
 			return false;
+		}
 		for (String chapter : localChapters)
 		{
 			if (chapter == null)
+			{
 				continue;
+			}
 			for (String target : targetChapters)
+			{
 				if (WomDirectoryClient.normalize(chapter).equals(
 						WomDirectoryClient.normalize(target)))
+				{
 					return true;
+				}
+			}
 		}
 		return false;
 	}

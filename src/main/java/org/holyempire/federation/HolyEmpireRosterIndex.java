@@ -23,7 +23,9 @@ final class HolyEmpireRosterIndex
 		{
 			if (normalized.isEmpty() ||
 				WomDirectoryClient.normalize(e.getKey()).contains(normalized))
+			{
 				found.add(e.getKey());
+			}
 		}
 		found.sort(String.CASE_INSENSITIVE_ORDER);
 		return found;
@@ -34,13 +36,17 @@ final class HolyEmpireRosterIndex
 	{
 		String needle = WomDirectoryClient.normalize(query);
 		if (needle.isEmpty())
+		{
 			return new ArrayList<>(ranked);
+		}
 		List<WomDirectoryClient.ChapterMember> found = new ArrayList<>();
 		for (WomDirectoryClient.ChapterMember member : ranked)
 		{
 			if (WomDirectoryClient.normalize(member.name).contains(needle) ||
 				WomDirectoryClient.normalize(member.readableRank()).contains(needle))
+			{
 				found.add(member);
+			}
 		}
 		// Preserve WOM rank order when searching.
 		return found;
@@ -50,8 +56,12 @@ final class HolyEmpireRosterIndex
 	{
 		List<String> found = new ArrayList<>();
 		for (Map.Entry<String, List<String>> e : roster.entrySet())
+		{
 			if (e.getValue().contains(clan))
+			{
 				found.add(e.getKey());
+			}
+		}
 		found.sort(String.CASE_INSENSITIVE_ORDER);
 		return found;
 	}

@@ -30,17 +30,25 @@ public class FederationMinimapDotTest
 		}
 		int[] expected = {0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 0, 2, 2, 0};
 		for (int row = 0; row < 5; row++)
+		{
 			for (int col = 0; col < 4; col++)
 			{
 				int actual = image.getRGB(6 + col, 6 + row);
 				int want = expected[row * 4 + col];
 				if (want == 0)
+				{
 					assertEquals(0, actual);
+				}
 				if (want == 1)
+				{
 					assertEquals(Color.MAGENTA.getRGB(), actual);
+				}
 				if (want == 2)
+				{
 					assertEquals(Color.BLACK.getRGB(), actual);
+				}
 			}
+		}
 	}
 
 	@Test

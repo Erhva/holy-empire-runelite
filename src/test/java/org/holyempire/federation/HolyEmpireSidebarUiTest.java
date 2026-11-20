@@ -21,12 +21,16 @@ public class HolyEmpireSidebarUiTest
 		for (Component child : parent.getComponents())
 		{
 			if (name.equals(child.getName()))
+			{
 				return child;
+			}
 			if (child instanceof Container)
 			{
 				Component found = named((Container)child, name);
 				if (found != null)
+				{
 					return found;
+				}
 			}
 		}
 		return null;

@@ -42,7 +42,9 @@ public class HolyEmpireChapterCatalogTest
 	{
 		Set<String> supplied = new HashSet<>(Arrays.asList(WomDirectoryClient.CLANS));
 		for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
+		{
 			assertEquals(!chapter.name.equals("Ultramarines"), chapter.hasWomRoster());
+		}
 		assertEquals(16, supplied.size());
 		assertNull(HolyEmpireChapterCatalog.get("Unknown"));
 		assertEquals("F2P friendly", HolyEmpireChapterCatalog.get("Ultramarines").subtitle());

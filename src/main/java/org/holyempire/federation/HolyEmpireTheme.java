@@ -141,7 +141,9 @@ final class HolyEmpireTheme
 							Boolean.TRUE.equals(button.getClientProperty("holyEmpireHover"));
 			Color fill = button.isSelected() ? SELECTED : hover ? HOVER : PANEL;
 			if (!button.isEnabled())
+			{
 				fill = STEEL;
+			}
 			g.setColor(fill);
 			g.fillRect(0, 0, button.getWidth(), button.getHeight());
 			g.setColor(restricted ? CRIMSON : button.isSelected() ? BLUE : GOLD_EDGE);

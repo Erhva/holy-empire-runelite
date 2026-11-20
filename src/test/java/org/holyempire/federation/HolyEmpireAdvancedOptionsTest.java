@@ -74,7 +74,9 @@ public class HolyEmpireAdvancedOptionsTest
 											 original, Collections.singletonList("Holy Empire")),
 										 ChapterIndicatorColors.menuColor(
 											 original, Collections.singletonList("Holy Empire"))))
+		{
 			assertEquals(Color.MAGENTA, color);
+		}
 		assertTrue(original.showClanRankIcons());
 		assertFalse(original.useChapterDotColors());
 	}
@@ -87,7 +89,9 @@ public class HolyEmpireAdvancedOptionsTest
 		{
 			String suffix = "";
 			for (String token : chapter.name.split(" "))
+			{
 				suffix += token.substring(0, 1).toUpperCase() + token.substring(1);
+			}
 			ConfigItem item = FederationConfig.class.getMethod("dotColor" + suffix)
 								  .getAnnotation(ConfigItem.class);
 			assertNotNull(chapter.name, item);
@@ -161,8 +165,10 @@ public class HolyEmpireAdvancedOptionsTest
 			// Setting and behavioral fallback are intentionally retired.
 		}
 		for (java.lang.reflect.Method m : FederationConfig.class.getMethods())
+		{
 			assertFalse("Old independent overhead color picker remains: " + m.getName(),
 						m.getName().startsWith("overheadColor"));
+		}
 	}
 
 	@Test

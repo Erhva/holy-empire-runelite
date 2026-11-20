@@ -45,7 +45,9 @@ public class FederationInGameBanSyncButtonTest
 		{
 			root = fake(Widget.class, (p, m, args) -> {
 				if (m.getName().equals("getChildren"))
+				{
 					return children.toArray(new Widget[0]);
+				}
 				if (m.getName().equals("createChild"))
 				{
 					WidgetState child = new WidgetState(false);
@@ -54,9 +56,13 @@ public class FederationInGameBanSyncButtonTest
 					return child.root;
 				}
 				if (m.getName().equals("isHidden"))
+				{
 					return hidden;
+				}
 				if (m.getName().equals("toString"))
+				{
 					return "fake-root";
+				}
 				return null;
 			});
 		}
@@ -105,9 +111,13 @@ public class FederationInGameBanSyncButtonTest
 			fake(ClanMember.class, (p, m, a) -> m.getName().equals("getRank") ? rank : null);
 		ClanSettings settings = fake(ClanSettings.class, (p, m, a) -> {
 			if (m.getName().equals("getName"))
+			{
 				return chapter;
+			}
 			if (m.getName().equals("findMember"))
+			{
 				return member;
+			}
 			return null;
 		});
 		return fake(Client.class, (p, m, a) -> {

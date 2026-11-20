@@ -33,12 +33,16 @@ public class HolyEmpireThemeTest
 		for (Component child : root.getComponents())
 		{
 			if (id.equals(child.getName()))
+			{
 				return child;
+			}
 			if (child instanceof Container)
 			{
 				Component found = named((Container)child, id);
 				if (found != null)
+				{
 					return found;
+				}
 			}
 		}
 		return null;
@@ -52,9 +56,13 @@ public class HolyEmpireThemeTest
 		for (java.awt.event.MouseListener listener : button.getMouseListeners())
 		{
 			if (enter)
+			{
 				listener.mouseEntered(event);
+			}
 			else
+			{
 				listener.mouseExited(event);
+			}
 		}
 	}
 

@@ -71,7 +71,9 @@ public class FederationBanRegistryTest
 					TIME));
 		List<String> excessive = new ArrayList<>();
 		for (int i = 0; i < 101; i++)
+		{
 			excessive.add("rsn" + i);
+		}
 		bad(() -> FederationBanRegistry.fromVisibleWidget("Holy Empire", excessive, TIME));
 		assertEquals(1, store.total());
 		assertEquals(1, store.matches("FirstUser").size());
@@ -167,12 +169,16 @@ public class FederationBanRegistryTest
 		for (java.awt.Component c : root.getComponents())
 		{
 			if (key.equals(c.getName()))
+			{
 				return c;
+			}
 			if (c instanceof java.awt.Container)
 			{
 				java.awt.Component nested = find((java.awt.Container)c, key);
 				if (nested != null)
+				{
 					return nested;
+				}
 			}
 		}
 		return null;

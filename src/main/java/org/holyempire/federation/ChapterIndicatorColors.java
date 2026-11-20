@@ -20,20 +20,30 @@ final class ChapterIndicatorColors
 	static String primaryChapter(List<String> clans)
 	{
 		if (clans == null)
+		{
 			return null;
+		}
 		for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
+		{
 			if (clans.contains(chapter.name))
+			{
 				return chapter.name;
+			}
+		}
 		return null;
 	}
 
 	static Color dotColor(FederationConfig config, List<String> clans)
 	{
 		if (!config.useChapterDotColors())
+		{
 			return config.memberColor();
+		}
 		String chapter = primaryChapter(clans);
 		if (chapter == null)
+		{
 			return config.memberColor();
+		}
 		switch (chapter)
 		{
 		case "Holy Empire":

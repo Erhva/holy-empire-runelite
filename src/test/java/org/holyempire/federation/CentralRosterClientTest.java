@@ -43,7 +43,9 @@ public class CentralRosterClientTest
 	{
 		StringBuilder text = new StringBuilder();
 		for (byte b : bytes)
+		{
 			text.append(String.format("%02x", b & 255));
+		}
 		return text.toString();
 	}
 
@@ -117,7 +119,9 @@ public class CentralRosterClientTest
 	@After public void stop()
 	{
 		if (server != null)
+		{
 			server.stop(0);
+		}
 	}
 
 	private void addWarningFixture(String... names) throws Exception
@@ -129,7 +133,9 @@ public class CentralRosterClientTest
 		feed.addProperty("roster_sha256", digest);
 		JsonArray hashes = new JsonArray();
 		for (String name : names)
+		{
 			hashes.add(FederationPublicBanWarnings.hash(name));
+		}
 		feed.add("digests", hashes);
 		warningCompressed = gzip(feed.toString().getBytes(StandardCharsets.UTF_8));
 		warningDigest = hex(MessageDigest.getInstance("SHA-256").digest(warningCompressed));

@@ -25,7 +25,9 @@ public class InGameClanVerifierTest
 			ClanMember.class.getClassLoader(), new Class[] {ClanMember.class},
 			(proxy, method, args) -> {
 				if ("getName".equals(method.getName()))
+				{
 					return name;
+				}
 				throw new UnsupportedOperationException(method.getName());
 			});
 	}
@@ -108,11 +110,17 @@ public class InGameClanVerifierTest
 			ClanSettings.class.getClassLoader(), new Class[] {ClanSettings.class},
 			(proxy, method, args) -> {
 				if ("getName".equals(method.getName()))
+				{
 					return "Holy Empire";
+				}
 				if ("findMember".equals(method.getName()))
+				{
 					throw new IllegalStateException("Index not loaded yet");
+				}
 				if ("getMembers".equals(method.getName()))
+				{
 					return members;
+				}
 				throw new UnsupportedOperationException(method.getName());
 			});
 		assertEquals("Holy Empire", InGameClanVerifier.chapterFor(unavailableIndex, "alpha"));
@@ -125,11 +133,17 @@ public class InGameClanVerifierTest
 			ClanSettings.class.getClassLoader(), new Class[] {ClanSettings.class},
 			(proxy, method, args) -> {
 				if ("getName".equals(method.getName()))
+				{
 					return "Holy Empire";
+				}
 				if ("findMember".equals(method.getName()))
+				{
 					return null;
+				}
 				if ("getMembers".equals(method.getName()))
+				{
 					return null;
+				}
 				throw new UnsupportedOperationException(method.getName());
 			});
 		assertEquals("", InGameClanVerifier.chapterFor(unavailable, "alpha"));

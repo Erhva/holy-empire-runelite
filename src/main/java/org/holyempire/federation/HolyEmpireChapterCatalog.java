@@ -32,8 +32,12 @@ final class HolyEmpireChapterCatalog
 		boolean hasWomRoster()
 		{
 			for (String configured : WomDirectoryClient.CLANS)
+			{
 				if (configured.equals(name))
+				{
 					return true;
+				}
+			}
 			return false;
 		}
 
@@ -70,8 +74,12 @@ final class HolyEmpireChapterCatalog
 	static Chapter get(String name)
 	{
 		for (Chapter chapter : ORDERED)
+		{
 			if (chapter.name.equals(name))
+			{
 				return chapter;
+			}
+		}
 		return null;
 	}
 }

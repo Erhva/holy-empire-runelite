@@ -188,7 +188,9 @@ final class FederationBanToolsPanel extends JPanel
 										  .addExtensionFilter("CSV files", "csv")
 										  .showDialog(this);
 			if (selected.isEmpty())
+			{
 				return;
+			}
 			selected.get(0).write(registry.toCsv(), StandardOpenOption.CREATE,
 								  StandardOpenOption.TRUNCATE_EXISTING);
 			message("Exported " + registry.total() + " name(s) to " +
@@ -211,7 +213,9 @@ final class FederationBanToolsPanel extends JPanel
 										  .addExtensionFilter("CSV files", "csv")
 										  .showDialog(this);
 			if (selected.isEmpty())
+			{
 				return;
+			}
 			Filepath path = selected.get(0);
 			if (path.size() > 256_000)
 			{
@@ -239,7 +243,9 @@ final class FederationBanToolsPanel extends JPanel
 					+ "Only import administrator-reviewed exports. Continue?",
 				"Import Chapter Ban Lists", JOptionPane.YES_NO_OPTION);
 			if (confirm != JOptionPane.YES_OPTION)
+			{
 				return;
+			}
 			int entries = registry.importCsv(data.toString());
 			message("Imported " + entries + " banned name(s) from staff-provided CSV. "
 					+ "These are labeled IMPORTED_FILE until verified against the game.");

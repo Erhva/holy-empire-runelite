@@ -21,12 +21,16 @@ public class FederationPanelUiTest
 		for (Component child : parent.getComponents())
 		{
 			if (name.equals(child.getName()))
+			{
 				return child;
+			}
 			if (child instanceof Container)
 			{
 				Component match = named((Container)child, name);
 				if (match != null)
+				{
 					return match;
+				}
 			}
 		}
 		return null;
@@ -273,9 +277,13 @@ public class FederationPanelUiTest
 		for (Component component : parent.getComponents())
 		{
 			if (name.equals(component.getName()))
+			{
 				found++;
+			}
 			if (component instanceof Container)
+			{
 				found += countNamed((Container)component, name);
+			}
 		}
 		return found;
 	}

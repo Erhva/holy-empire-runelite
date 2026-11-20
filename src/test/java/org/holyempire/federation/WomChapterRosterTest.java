@@ -21,7 +21,9 @@ public class WomChapterRosterTest
 		player.addProperty("displayName", name);
 		m.add("player", player);
 		if (rank != null)
+		{
 			m.addProperty("role", rank);
+		}
 		return m;
 	}
 
