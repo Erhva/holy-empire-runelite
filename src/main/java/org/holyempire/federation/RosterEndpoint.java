@@ -7,34 +7,20 @@
 
 package org.holyempire.federation;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
-/** Public endpoint packaged into the JAR; never contains credentials. */
+/**
+ * The public roster origin is defined in audited Java source, not loaded from
+ * a mutable resource or runtime configuration.
+ */
 final class RosterEndpoint
 {
+	private static final String ROSTER_ORIGIN = "https://roster.holyempireosrs.cc";
+
 	private RosterEndpoint()
 	{
 	}
 
-	static String baseUrl() throws IOException
+	static String baseUrl()
 	{
-		String override = System.getProperty("holyempire.rosterBaseUrl");
-		if (override != null)
-		{
-			return override.trim();
-		}
-		try (InputStream input =
-				 RosterEndpoint.class.getResourceAsStream("/holyempire-roster.properties"))
-		{
-			if (input == null)
-			{
-				return "";
-			}
-			Properties properties = new Properties();
-			properties.load(input);
-			return properties.getProperty("baseUrl", "").trim();
-		}
+		return ROSTER_ORIGIN;
 	}
 }

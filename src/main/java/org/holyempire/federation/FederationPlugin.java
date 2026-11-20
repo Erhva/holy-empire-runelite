@@ -1052,6 +1052,12 @@ public class FederationPlugin extends Plugin
 				menu.setTarget(target + " <col=ff5555>[BAN-LIST WARNING]</col>");
 			}
 		}
+		// Suppress custom chapter tags and rank markers in all PvP areas.
+		// Recruitment ban warnings above are unaffected.
+		if (HolyEmpirePvpPolicy.suppressPlayerIndicators(client))
+		{
+			return;
+		}
 		Map<String, List<String>> lookup = members();
 		if (lookup.isEmpty())
 		{

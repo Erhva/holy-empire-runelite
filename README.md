@@ -13,6 +13,8 @@
 
 Once the plugin is available on the RuneLite Plugin Hub, search for **Holy Empire** and install it. Open the Holy Empire side panel to browse members and chapters, then customize player indicators and chapter colors in the plugin settings.
 
+To prevent player-identification advantages in combat, Holy Empire minimap dots, overhead names, and chapter/rank labels in right-click menus are automatically hidden in PvP areas and PvP-type worlds. Clan rosters and non-identification tools remain available.
+
 Member-only features use the published Holy Empire roster to recognize your RuneScape character.
 
 ## Data and privacy

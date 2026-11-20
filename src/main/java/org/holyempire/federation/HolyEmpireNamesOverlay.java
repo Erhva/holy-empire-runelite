@@ -50,10 +50,9 @@ public class HolyEmpireNamesOverlay extends Overlay
 		return setting == HighlightSetting.ENABLED || (setting == HighlightSetting.PVP && inPvp);
 	}
 
-	@Override
-	public Dimension render(Graphics2D graphics)
+	@Override public Dimension render(Graphics2D graphics)
 	{
-		if (!config.showOverheadNames())
+		if (HolyEmpirePvpPolicy.suppressPlayerIndicators(client) || !config.showOverheadNames())
 		{
 			return null;
 		}

@@ -4,10 +4,10 @@ Thanks for helping improve the Holy Empire RuneLite plugin. This file covers dev
 
 ## Development
 
-The project uses Java 11 and Gradle. From the repository root, run:
+The project uses Java 11 and Gradle. The public roster origin is pinned in RosterEndpoint.java for Plugin Hub review; do not use resources or runtime overrides for its URL. From the repository root, run:
 
 ~~~sh
-./gradlew test jar -PholyempireRosterBaseUrl=https://roster.holyempireosrs.cc
+./gradlew test jar
 ~~~
 
 Test changes in an isolated RuneLite development client before proposing updates. Avoid committing private officer credentials, API secrets, or local development data.

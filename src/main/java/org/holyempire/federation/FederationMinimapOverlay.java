@@ -36,10 +36,9 @@ public class FederationMinimapOverlay extends Overlay
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
 
-	@Override
-	public Dimension render(Graphics2D g)
+	@Override public Dimension render(Graphics2D g)
 	{
-		if (!config.showFederationDots())
+		if (HolyEmpirePvpPolicy.suppressPlayerIndicators(client) || !config.showFederationDots())
 		{
 			return null;
 		}
