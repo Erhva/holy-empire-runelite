@@ -8,8 +8,9 @@
 package org.holyempire.federation;
 
 /**
- * The public roster origin is defined in audited Java source, not loaded from
- * a mutable resource or runtime configuration.
+ * The production roster origin is defined in audited Java source.
+ * Developer builds can select an alternative origin with a JVM property,
+ * without introducing a configurable URL into packaged resources.
  */
 final class RosterEndpoint
 {
@@ -21,6 +22,7 @@ final class RosterEndpoint
 
 	static String baseUrl()
 	{
-		return ROSTER_ORIGIN;
+		String override = System.getProperty("holyempire.rosterBaseUrl");
+		return override == null ? ROSTER_ORIGIN : override.trim();
 	}
 }

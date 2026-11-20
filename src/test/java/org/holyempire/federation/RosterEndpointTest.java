@@ -17,26 +17,45 @@ public class RosterEndpointTest
 		assertEquals("https://roster.holyempireosrs.cc", RosterEndpoint.baseUrl());
 	}
 
-	@Test public void rosterUrlDoesNotDependOnResourceOrRuntimeOverride()
+	@Test public void rosterUrlAllowsExplicitJVMOverrideWithoutBundledProperties()
 	{
 		String previous = System.getProperty("holyempire.rosterBaseUrl");
 		try
 		{
-			System.setProperty("holyempire.rosterBaseUrl", "http://127.0.0.1:18765");
-			assertEquals("https://roster.holyempireosrs.cc", RosterEndpoint.baseUrl());
+			System.setProperty("holyempire.rosterBaseUrl", " http://127.0.0.1:18765 ");
+			assertEquals("http://127.0.0.1:18765", RosterEndpoint.baseUrl());
 			assertNull("Roster URL must not come from a resource",
 					   RosterEndpoint.class.getResource("/holyempire-roster.properties"));
 		}
 		finally
 		{
-			if (previous == null)
-			{
-				System.clearProperty("holyempire.rosterBaseUrl");
-			}
-			else
-			{
-				System.setProperty("holyempire.rosterBaseUrl", previous);
-			}
+			restoreOverride(previous);
+		}
+	}
+
+	@Test public void anExplicitEmptyOverrideDisablesRemoteRosterCalls()
+	{
+		String previous = System.getProperty("holyempire.rosterBaseUrl");
+		try
+		{
+			System.setProperty("holyempire.rosterBaseUrl", "");
+			assertEquals("", RosterEndpoint.baseUrl());
+		}
+		finally
+		{
+			restoreOverride(previous);
+		}
+	}
+
+	private static void restoreOverride(String previous)
+	{
+		if (previous == null)
+		{
+			System.clearProperty("holyempire.rosterBaseUrl");
+		}
+		else
+		{
+			System.setProperty("holyempire.rosterBaseUrl", previous);
 		}
 	}
 }

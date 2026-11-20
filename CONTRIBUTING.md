@@ -4,7 +4,7 @@ Thanks for helping improve the Holy Empire RuneLite plugin. This file covers dev
 
 ## Development
 
-The project uses Java 11 and Gradle. The public roster origin is pinned in RosterEndpoint.java for Plugin Hub review; do not use resources or runtime overrides for its URL. From the repository root, run:
+The project uses Java 11 and Gradle. The production roster origin is pinned in `RosterEndpoint.java` for Plugin Hub review; test clients may override it with the JVM argument `-Dholyempire.rosterBaseUrl=https://your-test-roster.example`. The URL is never loaded from a packaged properties resource. From the repository root, run:
 
 ~~~sh
 ./gradlew test jar
