@@ -125,6 +125,57 @@ public class FederationOfficerEnrollmentClientTest
 	}
 
 	@Test
+	public void awaitingGameDisplaysPendingReview() throws Exception
+	{
+		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server.createContext("/v1/officer-enroll/", exchange -> {
+			String path = exchange.getRequestURI().getPath();
+			String response;
+			if (path.endsWith("/request"))
+			{
+				response = "{\"id\":\"0123456789abcdef0123456789abcdef\","
+						   + "\"ticket\":\"another_private_status_ticket_0123456789abcdef\","
+						   + "\"url\":\"https://discord.com/oauth2/authorize?state=sample\","
+						   + "\"expires_at\":1800000000}";
+			}
+			else if (path.endsWith("/status"))
+			{
+				response = "{\"status\":\"awaiting_game\"}";
+			}
+			else
+			{
+				exchange.sendResponseHeaders(404, -1);
+				exchange.close();
+				return;
+			}
+			byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+			exchange.getResponseHeaders().add("Content-Type", "application/json");
+			exchange.sendResponseHeaders(200, bytes.length);
+			try (java.io.OutputStream output = exchange.getResponseBody())
+			{
+				output.write(bytes);
+			}
+		});
+		server.start();
+		String origin = "http://127.0.0.1:" + server.getAddress().getPort();
+		System.setProperty("holyempire.testBanSyncOrigin", origin);
+		try
+		{
+			Filepath directory = Filepath.Unchecked.getRooted(folder.getRoot().toPath());
+			FederationOfficerEnrollmentClient client = new FederationOfficerEnrollmentClient(
+				new OkHttpClient(), directory, new FederationOfficerCredentialStore(directory),
+				origin);
+			client.request("Officer One", "Holy Empire");
+			assertEquals("Pending Review", client.check("Officer One", "Holy Empire", () -> true));
+		}
+		finally
+		{
+			System.clearProperty("holyempire.testBanSyncOrigin");
+			server.stop(0);
+		}
+	}
+
+	@Test
 	public void tokenFormatAndOfficialOriginArePinned() throws Exception
 	{
 		String one = FederationOfficerEnrollmentClient.randomCredential();

@@ -137,7 +137,7 @@ final class FederationBanDirectoryClient
 				JsonArray rawEntries = document.getAsJsonArray("entries");
 				JsonArray rawChapters = document.getAsJsonArray("snapshots");
 				if (rawEntries == null || rawEntries.size() > MAX_ENTRIES || rawChapters == null ||
-					rawChapters.size() > WomDirectoryClient.GROUPS.length)
+					rawChapters.size() > HolyEmpireChapterCatalog.ORDERED.size())
 				{
 					throw new IOException("Private ban directory exceeds safe limits.");
 				}

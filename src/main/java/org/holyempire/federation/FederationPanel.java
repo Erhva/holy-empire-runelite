@@ -19,7 +19,6 @@ public class FederationPanel extends PluginPanel
 {
 	private final FederationBanRegistry banRegistry = new FederationBanRegistry();
 	private Set<String> publicBanHashes = Collections.emptySet();
-	private FederationBanToolsPanel.Capture banCapture;
 	private Runnable officerSettingsOpener;
 	private java.util.function.Consumer<Boolean> banDirectoryLoader;
 	private volatile boolean officerSettingsRequested;
@@ -36,12 +35,11 @@ public class FederationPanel extends PluginPanel
 	private boolean banDirectoryLoading = false;
 	private String banDirectoryError = null;
 	private final javax.swing.Timer privateCacheTimer;
+	private final javax.swing.Timer searchDebounceTimer =
+		new javax.swing.Timer(175, e -> refresh());
+	private Map<String, Integer> cachedBanCounts = Collections.emptyMap();
+	private List<FederationBanDirectoryClient.Entry> sortedBanEntries = Collections.emptyList();
 	private volatile boolean officerSettingsEligible;
-
-	void setBanCapture(FederationBanToolsPanel.Capture handler)
-	{
-		banCapture = handler;
-	}
 
 	void setOfficerSettingsOpener(Runnable opener)
 	{
@@ -72,6 +70,8 @@ public class FederationPanel extends PluginPanel
 		}
 		banDirectory = null;
 		banDirectoryCachedAt = 0;
+		cachedBanCounts = Collections.emptyMap();
+		sortedBanEntries = Collections.emptyList();
 		banDirectoryError = null;
 		banDirectoryLoading = true;
 		refresh();
@@ -87,6 +87,8 @@ public class FederationPanel extends PluginPanel
 		banDirectoryCachedAt = 0;
 		banDirectoryLoading = false;
 		banDirectoryError = null;
+		cachedBanCounts = Collections.emptyMap();
+		sortedBanEntries = Collections.emptyList();
 		banSearch.setText("");
 		banChapterSearch.setText("");
 	}
@@ -100,6 +102,18 @@ public class FederationPanel extends PluginPanel
 				return;
 			}
 			banDirectory = snapshot;
+			Map<String, Integer> counts = new HashMap<>();
+			List<FederationBanDirectoryClient.Entry> sorted = new ArrayList<>(snapshot.entries);
+			sorted.sort(Comparator
+							.comparing((FederationBanDirectoryClient.Entry e)
+										   -> WomDirectoryClient.normalize(e.name))
+							.thenComparing(e -> e.chapter));
+			for (FederationBanDirectoryClient.Entry entry : sorted)
+			{
+				counts.merge(entry.chapter, 1, Integer::sum);
+			}
+			cachedBanCounts = Collections.unmodifiableMap(counts);
+			sortedBanEntries = Collections.unmodifiableList(sorted);
 			banDirectoryCachedAt = System.currentTimeMillis();
 			banDirectoryError = null;
 			banDirectoryLoading = false;
@@ -117,6 +131,8 @@ public class FederationPanel extends PluginPanel
 			banDirectory = null;
 			banDirectoryCachedAt = 0;
 			banDirectoryLoading = false;
+			cachedBanCounts = Collections.emptyMap();
+			sortedBanEntries = Collections.emptyList();
 			banDirectoryError = message;
 			refresh();
 		});
@@ -145,6 +161,7 @@ public class FederationPanel extends PluginPanel
 	void stopPrivateCacheTimer()
 	{
 		privateCacheTimer.stop();
+		searchDebounceTimer.stop();
 	}
 
 	void setOfficerSettingsEligible(boolean eligible)
@@ -193,11 +210,6 @@ public class FederationPanel extends PluginPanel
 		});
 	}
 
-	FederationBanToolsPanel makeBanTools()
-	{
-		return new FederationBanToolsPanel(banRegistry, banCapture);
-	}
-
 	private static final int SEARCH_PREVIEW_LIMIT = 120;
 	private final JTextField globalSearch = new JTextField();
 	private final JTextField chapterSearch = new JTextField();
@@ -219,12 +231,15 @@ public class FederationPanel extends PluginPanel
 
 	private Map<String, List<String>> members = Collections.emptyMap();
 	private Map<String, List<WomDirectoryClient.ChapterMember>> chapters = Collections.emptyMap();
+	private Map<String, Map<String, WomDirectoryClient.ChapterMember>> chapterRankIndex =
+		Collections.emptyMap();
 	private String emptyMessage = "Log in to load Holy Empire.";
 	private boolean cachedStale = false;
 	private String selectedChapter = null;
 
 	public FederationPanel()
 	{
+		searchDebounceTimer.setRepeats(false);
 		setLayout(new BorderLayout(0, 7));
 		setBackground(HolyEmpireTheme.STEEL);
 		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -239,15 +254,15 @@ public class FederationPanel extends PluginPanel
 		DocumentListener refreshOnSearch = new DocumentListener() {
 			public void insertUpdate(DocumentEvent e)
 			{
-				refresh();
+				queueSearchRefresh();
 			}
 			public void removeUpdate(DocumentEvent e)
 			{
-				refresh();
+				queueSearchRefresh();
 			}
 			public void changedUpdate(DocumentEvent e)
 			{
-				refresh();
+				queueSearchRefresh();
 			}
 		};
 		globalSearch.setName("holyEmpireGlobalSearch");
@@ -314,6 +329,8 @@ public class FederationPanel extends PluginPanel
 			{
 				banDirectory = null;
 				banDirectoryCachedAt = 0;
+				cachedBanCounts = Collections.emptyMap();
+				sortedBanEntries = Collections.emptyList();
 				if (verified && officerSettingsEligible)
 				{
 					requestBanDirectory(false);
@@ -322,6 +339,21 @@ public class FederationPanel extends PluginPanel
 		});
 		privateCacheTimer.start();
 		refresh();
+	}
+
+	/** Debounce only large datasets to reduce Swing reconstruction under rapid typing. */
+	private void queueSearchRefresh()
+	{
+		int banCount = banDirectory == null ? 0 : banDirectory.entries.size();
+		if (members.size() + banCount >= 250)
+		{
+			searchDebounceTimer.restart();
+		}
+		else
+		{
+			searchDebounceTimer.stop();
+			refresh();
+		}
 	}
 
 	/** Always-visible shortcut row above the home, chapter and denied headers. */
@@ -341,8 +373,7 @@ public class FederationPanel extends PluginPanel
 	private static JButton linkButton(String name, String label, Icon icon, String url)
 	{
 		JButton button = new JButton() {
-			@Override
-			protected void paintComponent(Graphics graphics)
+			@Override protected void paintComponent(Graphics graphics)
 			{
 				// RuneLite's Swing LAF paints a highlighted JButton's *content area*
 				// only, leaving its padded edges dark. Fill the entire 31x31 square
@@ -391,13 +422,11 @@ public class FederationPanel extends PluginPanel
 					BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 				button.repaint();
 			}
-			@Override
-			public void mouseEntered(java.awt.event.MouseEvent e)
+			@Override public void mouseEntered(java.awt.event.MouseEvent e)
 			{
 				hover(true);
 			}
-			@Override
-			public void mouseExited(java.awt.event.MouseEvent e)
+			@Override public void mouseExited(java.awt.event.MouseEvent e)
 			{
 				hover(false);
 			}
@@ -523,6 +552,7 @@ public class FederationPanel extends PluginPanel
 			publicBanHashes = Collections.emptySet();
 			members = Collections.emptyMap();
 			chapters = Collections.emptyMap();
+			chapterRankIndex = Collections.emptyMap();
 			cachedStale = false;
 			emptyMessage = message;
 			selectedChapter = null;
@@ -550,6 +580,7 @@ public class FederationPanel extends PluginPanel
 			publicBanHashes = Collections.emptySet();
 			members = Collections.emptyMap();
 			chapters = Collections.emptyMap();
+			chapterRankIndex = Collections.emptyMap();
 			cachedStale = false;
 			selectedChapter = null;
 			refresh();
@@ -590,6 +621,7 @@ public class FederationPanel extends PluginPanel
 			denied = false;
 			members = new HashMap<>(roster);
 			chapters = new HashMap<>(chapterRosters);
+			chapterRankIndex = HolyEmpireChapterRankIndex.build(chapters);
 			publicBanHashes = safeHashes;
 			cachedStale = stale;
 			emptyMessage = "No roster loaded";
@@ -619,16 +651,7 @@ public class FederationPanel extends PluginPanel
 	/** Rank details come from the same verified chapter rosters as chapter rows. */
 	private WomDirectoryClient.ChapterMember findRank(String player, String clan)
 	{
-		for (WomDirectoryClient.ChapterMember chapterMember :
-			 chapters.getOrDefault(clan, Collections.emptyList()))
-		{
-			if (WomDirectoryClient.normalize(chapterMember.name)
-					.equals(WomDirectoryClient.normalize(player)))
-			{
-				return chapterMember;
-			}
-		}
-		return null;
+		return HolyEmpireChapterRankIndex.find(chapterRankIndex, clan, player);
 	}
 
 	private void addGlobalResult(String name)
@@ -750,7 +773,7 @@ public class FederationPanel extends PluginPanel
 		JButton officerSettings = HolyEmpireTheme.button("Admin Verification", true);
 		officerSettings.setName("holyEmpireOfficerBanSettings");
 		officerSettings.setToolTipText(
-			"Owner and Deputy Owner only. Configure the admin credential key.");
+			"Owner and Deputy Owner only. Verification credentials save automatically.");
 		officerSettings.setAlignmentX(LEFT_ALIGNMENT);
 		officerSettings.setMaximumSize(
 			new Dimension(Integer.MAX_VALUE, officerSettings.getPreferredSize().height + 4));
@@ -947,7 +970,7 @@ public class FederationPanel extends PluginPanel
 			return Collections.emptyList();
 		}
 		List<FederationBanDirectoryClient.Entry> selected = new ArrayList<>();
-		for (FederationBanDirectoryClient.Entry entry : banDirectory.entries)
+		for (FederationBanDirectoryClient.Entry entry : sortedBanEntries)
 		{
 			if ((chapter == null || chapter.equals(entry.chapter)) &&
 				banNameMatches(entry.name, query))
@@ -955,11 +978,7 @@ public class FederationPanel extends PluginPanel
 				selected.add(entry);
 			}
 		}
-		selected.sort(
-			Comparator
-				.comparing(
-					(FederationBanDirectoryClient.Entry e) -> WomDirectoryClient.normalize(e.name))
-				.thenComparing(e -> e.chapter));
+		// Cached entries are sorted once, not on every search keystroke.
 		return selected;
 	}
 
@@ -1044,14 +1063,7 @@ public class FederationPanel extends PluginPanel
 			{
 				final String chapter = info.name;
 				FederationBanDirectoryClient.Chapter snapshot = banDirectory.chapters.get(chapter);
-				int count = 0;
-				for (FederationBanDirectoryClient.Entry entry : banDirectory.entries)
-				{
-					if (entry.chapter.equals(chapter))
-					{
-						count++;
-					}
-				}
+				int count = cachedBanCounts.getOrDefault(chapter, 0);
 				JButton chapterButton = HolyEmpireTheme.button("", true);
 				chapterButton.setName("holyEmpireBanChapter:" + chapter);
 				chapterButton.setLayout(new BorderLayout(7, 0));
@@ -1117,7 +1129,7 @@ public class FederationPanel extends PluginPanel
 		}
 		List<FederationBanDirectoryClient.Entry> entries =
 			filteredBans(chapter, banChapterSearch.getText());
-		int total = filteredBans(chapter, "").size();
+		int total = cachedBanCounts.getOrDefault(chapter, 0);
 		heading("Ban list · " + entries.size() + " / " + total, 12);
 		if (entries.isEmpty())
 		{

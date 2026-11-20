@@ -12,8 +12,6 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -23,7 +21,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import net.runelite.client.config.ConfigManager;
@@ -34,8 +32,6 @@ import net.runelite.client.config.ConfigManager;
  */
 final class FederationOfficerSettingsDialog
 {
-	private static final String GROUP = "holyEmpireFederation";
-
 	private FederationOfficerSettingsDialog()
 	{
 	}
@@ -46,33 +42,11 @@ final class FederationOfficerSettingsDialog
 									FederationBanUploadClient.acceptedEndpoint(endpoint.trim()));
 	}
 
-	/** Only the credential is editable; the HTTPS service address is fixed. */
-	static JPanel credentialFields(JPasswordField token, boolean alreadyConfigured)
-	{
-		JPanel fields = new JPanel(new GridLayout(0, 1, 0, 5));
-		fields.setBackground(HolyEmpireTheme.STEEL);
-		HolyEmpireTheme.styleSearch(token);
-		JLabel credentialLabel = new JLabel("Admin Credential Key (Leave Blank to Keep Existing)");
-		credentialLabel.setName("holyEmpireAdminCredentialLabel");
-		credentialLabel.setForeground(HolyEmpireTheme.GOLD);
-		fields.add(credentialLabel);
-		fields.add(token);
-		JLabel status =
-			new JLabel(alreadyConfigured ? "An account-specific local credential is saved."
-										 : "No local credential configured");
-		status.setName("holyEmpireAdminKeyStatus");
-		status.setForeground(HolyEmpireTheme.MUTED);
-		fields.add(status);
-		return fields;
-	}
-
 	/** Testable persistent action bar: only the explicit Close button closes. */
-	static JPanel actionButtons(Runnable save, Runnable request, Runnable check, Runnable review,
-								Runnable close)
+	static JPanel actionButtons(Runnable request, Runnable check, Runnable review, Runnable close)
 	{
 		JPanel actions = new JPanel(new GridLayout(0, 2, 8, 8));
 		actions.setOpaque(false);
-		addAction(actions, "Save Key", "holyEmpireSaveAdminKey", save);
 		if (request != null)
 		{
 			addAction(actions, "Request Verification", "holyEmpireRequestVerification", request);
@@ -112,14 +86,14 @@ final class FederationOfficerSettingsDialog
 		JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(parent), "Admin Verification",
 									 Dialog.ModalityType.APPLICATION_MODAL);
 		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		JPasswordField token = new JPasswordField(26);
-		token.setName("holyEmpireAdminCredentialKey");
-		token.setToolTipText("Leave blank to keep the existing admin credential key.");
-		JPanel fields = credentialFields(token, !secrets.read(account).isEmpty());
-		JLabel keyStatus = (JLabel)fields.getComponent(2);
-
-		JTextArea status =
-			new JTextArea("Manage your officer credential or request verification.", 2, 35);
+		// Fixed-height scrollable feedback avoids clipping wrapped messages at 2x UI scaling.
+		JTextArea status = new JTextArea(
+			secrets.read(account).isEmpty()
+				? "Request verification using Discord. Once approved, your admin "
+					  + "credential is saved automatically for this RuneScape character."
+				: "An admin credential is stored on this computer for your RuneScape "
+					  + "character. It remains valid until an administrator revokes it.",
+			4, 38);
 		status.setName("holyEmpireVerificationFeedback");
 		status.setLineWrap(true);
 		status.setWrapStyleWord(true);
@@ -127,7 +101,13 @@ final class FederationOfficerSettingsDialog
 		status.setFocusable(false);
 		status.setBackground(HolyEmpireTheme.STEEL);
 		status.setForeground(HolyEmpireTheme.MUTED);
-		status.setBorder(BorderFactory.createEmptyBorder(3, 2, 3, 2));
+		status.setBorder(BorderFactory.createEmptyBorder(5, 3, 5, 3));
+		JScrollPane feedbackScroll =
+			new JScrollPane(status, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+							JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		feedbackScroll.setBorder(BorderFactory.createEmptyBorder());
+		feedbackScroll.setOpaque(false);
+		feedbackScroll.getViewport().setBackground(HolyEmpireTheme.STEEL);
 		Consumer<String> feedback = message ->
 		{
 			Runnable update = () ->
@@ -148,48 +128,6 @@ final class FederationOfficerSettingsDialog
 			}
 		};
 
-		Runnable save = () ->
-		{
-			if (!authorized.getAsBoolean())
-			{
-				feedback.accept("You no longer have permission to configure officer access.");
-				return;
-			}
-			char[] password = token.getPassword();
-			try
-			{
-				if (password.length > 0 && (password.length < 24 || password.length > 256))
-				{
-					feedback.accept("Officer credentials must contain 24 to 256 characters.");
-					return;
-				}
-				try
-				{
-					if (password.length > 0)
-					{
-						secrets.save(account, password);
-					}
-				}
-				catch (IOException error)
-				{
-					feedback.accept("Could not save the credential to a protected local file.");
-					return;
-				}
-				manager.setConfiguration(GROUP, "banSyncEndpoint",
-										 FederationBanUploadClient.OFFICIAL_ENDPOINT);
-				manager.unsetConfiguration(GROUP, "banSyncToken");
-				keyStatus.setText(secrets.read(account).isEmpty()
-									  ? "No local credential configured"
-									  : "An account-specific local credential is saved.");
-				feedback.accept(password.length > 0 ? "Admin key saved for this RuneScape account."
-													: "Existing admin key retained.");
-			}
-			finally
-			{
-				Arrays.fill(password, '\0');
-				token.setText("");
-			}
-		};
 		Runnable request = requestVerification == null ? null : () ->
 		{
 			if (authorized.getAsBoolean())
@@ -226,7 +164,7 @@ final class FederationOfficerSettingsDialog
 				feedback.accept("Officer access is no longer available.");
 			}
 		};
-		JPanel actions = actionButtons(save, request, check, review, dialog::dispose);
+		JPanel actions = actionButtons(request, check, review, dialog::dispose);
 
 		JPanel content = new JPanel(new BorderLayout(0, 12));
 		content.setBackground(HolyEmpireTheme.STEEL);
@@ -234,12 +172,8 @@ final class FederationOfficerSettingsDialog
 		JLabel heading = new JLabel("HOLY EMPIRE  •  ADMIN VERIFICATION");
 		heading.setForeground(HolyEmpireTheme.GOLD);
 		heading.setFont(heading.getFont().deriveFont(java.awt.Font.BOLD, 14f));
-		JPanel top = new JPanel(new BorderLayout(0, 11));
-		top.setOpaque(false);
-		top.add(heading, BorderLayout.NORTH);
-		top.add(fields, BorderLayout.CENTER);
-		content.add(top, BorderLayout.NORTH);
-		content.add(status, BorderLayout.CENTER);
+		content.add(heading, BorderLayout.NORTH);
+		content.add(feedbackScroll, BorderLayout.CENTER);
 		content.add(actions, BorderLayout.SOUTH);
 		dialog.setContentPane(content);
 		dialog.pack();
@@ -251,7 +185,6 @@ final class FederationOfficerSettingsDialog
 		}
 		finally
 		{
-			token.setText("");
 			dialog.dispose();
 		}
 	}

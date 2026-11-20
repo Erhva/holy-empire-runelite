@@ -6,68 +6,54 @@
  */
 
 package org.holyempire.federation;
-
 import com.google.inject.Provides;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.time.Instant;
+import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
-import javax.inject.Inject;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import java.awt.image.BufferedImage;
+import java.awt.Graphics2D;
+import net.runelite.client.game.ChatIconManager;
+import java.util.Map;
+import java.util.concurrent.*;
+import javax.inject.Inject;
+import okhttp3.OkHttpClient;
+import java.time.Instant;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.api.*;
 import net.runelite.api.events.ClientTick;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.ClientToolbar;
-import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
-import okhttp3.OkHttpClient;
 
 @PluginDescriptor(name = "Holy Empire", internalName = "holy-empire",
 				  legacyDataDirectory = "holy-empire-officers",
 				  description = "Combined WOM clan rosters and player indicators")
 public class FederationPlugin extends Plugin
 {
-	@Inject
-	private Client client;
-	@Inject
-	private OverlayManager overlayManager;
-	@Inject
-	private ClientToolbar toolbar;
-	@Inject
-	private ClientThread clientThread;
-	@Inject
-	private ChatIconManager chatIconManager;
+	@Inject private Client client;
+	@Inject private OverlayManager overlayManager;
+	@Inject private ClientToolbar toolbar;
+	@Inject private ChatIconManager chatIconManager;
 	private final Map<String, Integer> customRankIconIds = new HashMap<>();
 	private final Set<Integer> renderedRankIconIndexes = new HashSet<>();
-	@Inject
-	private FederationMinimapOverlay overlay;
-	@Inject
-	private HolyEmpireNamesOverlay namesOverlay;
-	@Inject
-	private FederationApplicantOverlay applicantOverlay;
-	@Inject
-	private FederationConfig config;
-	@Inject
-	private ConfigManager configManager;
-	@Inject
-	private OkHttpClient httpClient;
+	@Inject private FederationMinimapOverlay overlay;
+	@Inject private HolyEmpireNamesOverlay namesOverlay;
+	@Inject private FederationApplicantOverlay applicantOverlay;
+	@Inject private FederationConfig config;
+	@Inject private ConfigManager configManager;
+	@Inject private OkHttpClient httpClient;
 	private volatile boolean officerAuthorized;
 	private final FederationSession session = new FederationSession();
 	private FederationOfficerCredentialStore officerSecrets;
@@ -84,14 +70,12 @@ public class FederationPlugin extends Plugin
 	private final ClanVexillumEquipTrigger vexillumRefreshTrigger = new ClanVexillumEquipTrigger();
 	private boolean pendingVexillumBanRefresh;
 
-	@Provides
-	FederationConfig provideConfig(net.runelite.client.config.ConfigManager c)
+	@Provides FederationConfig provideConfig(net.runelite.client.config.ConfigManager c)
 	{
 		return c.getConfig(FederationConfig.class);
 	}
 
-	@Override
-	protected void startUp() throws Exception
+	@Override protected void startUp() throws Exception
 	{
 		// RuneLite migrates the legacy local key directory on first access.
 		// Neither the public roster cache nor private keys can escape this root.
@@ -126,23 +110,6 @@ public class FederationPlugin extends Plugin
 				(owner, feedback) -> reviewEnrollment(account, generation, owner, feedback));
 		});
 		panel.setBanDirectoryLoader(this::loadCombinedBans);
-		panel.setBanCapture((success, failed) -> clientThread.invoke(() -> {
-			try
-			{
-				if (!session.isEligible())
-				{
-					throw new IllegalStateException("Verified Holy Empire membership is required.");
-				}
-				FederationBanRegistry.Snapshot snapshot =
-					FederationBanWidgetCapture.read(client, Instant.now());
-				success.accept(snapshot);
-			}
-			catch (RuntimeException ex)
-			{
-				failed.accept(ex.getMessage() == null ? "Ban-list capture unavailable"
-													  : ex.getMessage());
-			}
-		}));
 		inGameBanSyncButton = new FederationInGameBanSyncButton(this::syncBanListFromGame);
 		java.awt.image.BufferedImage sourceIcon;
 		try (java.io.InputStream stream = getClass().getResourceAsStream("/holy-empire-icon.png"))
@@ -255,13 +222,16 @@ public class FederationPlugin extends Plugin
 		String chapter = session.nativeChapter();
 		if (!officerStillEligible(account, generation, chapter))
 		{
+			enrollmentMessage(
+				"Only approved Owners and Deputy Owners may review or approve officer requests.",
+				feedback);
 			return;
 		}
 		scheduler.execute(() -> {
 			try
 			{
 				com.google.gson.JsonArray queue =
-					enrollmentClient.list(chapter, officerSecrets.read(account));
+					enrollmentClient.list("*", officerSecrets.read(account));
 				javax.swing.SwingUtilities.invokeLater(() -> {
 					if (!officerStillEligible(account, generation, chapter))
 					{
@@ -269,9 +239,9 @@ public class FederationPlugin extends Plugin
 					}
 					if (queue.size() == 0)
 					{
-						enrollmentMessage("There are no pending verification requests for " +
-											  chapter + ".",
-										  feedback);
+						enrollmentMessage(
+							"There are no pending verifications across Holy Empire chapters.",
+							feedback);
 						return;
 					}
 					java.util.LinkedHashMap<String, com.google.gson.JsonObject> options =
@@ -280,7 +250,16 @@ public class FederationPlugin extends Plugin
 					{
 						com.google.gson.JsonObject request = entry.getAsJsonObject();
 						String rsn = request.get("rsn").getAsString();
-						String key = rsn + " — " + request.get("id").getAsString();
+						String targetChapter = request.get("chapter").getAsString();
+						String discordName = request.has("discord_username") &&
+													 !request.get("discord_username").isJsonNull()
+												 ? request.get("discord_username").getAsString()
+												 : "Discord linked";
+						String key = targetChapter + " • " + rsn + " • " + discordName;
+						if (options.containsKey(key))
+						{
+							key += " — " + request.get("id").getAsString();
+						}
 						options.put(key, request);
 					}
 					String selected = (String)javax.swing.JOptionPane.showInputDialog(
@@ -294,12 +273,12 @@ public class FederationPlugin extends Plugin
 					}
 					com.google.gson.JsonObject selectedRequest = options.get(selected);
 					String rsn = selectedRequest.get("rsn").getAsString();
+					String targetChapter = selectedRequest.get("chapter").getAsString();
 					String code = javax.swing.JOptionPane.showInputDialog(
-						owner,
-						"Enter the one-time code received in a PRIVATE IN-GAME MESSAGE from " +
-							rsn +
-							(".\nConfirm the sender is the character shown, not a Discord "
-							 + "message."));
+						owner, "Confirm a PRIVATE IN-GAME MESSAGE from " + rsn + " in " +
+								   targetChapter +
+								   ".\\nEnter the code from your private Discord notification, "
+								   + "or from the applicant if notifications are unavailable.");
 					if (code == null)
 					{
 						return;
@@ -312,13 +291,13 @@ public class FederationPlugin extends Plugin
 					{
 						return;
 					}
+					String confirmation = "I personally verified an in-game private message from " +
+										  rsn + "\nand confirmed their current " + role +
+										  " rank in " + targetChapter + ".\n"
+										  + "Authorize this officer's Admin Credential Key?";
 					int confirmed = javax.swing.JOptionPane.showConfirmDialog(
-						owner,
-						"I personally verified an in-game private message from " + rsn +
-							"\nand confirmed their current " + role + " rank in " + chapter +
-							".\n"
-							+ "Authorize this officer's Admin Credential Key?",
-						"Confirm Officer Identity", javax.swing.JOptionPane.YES_NO_OPTION,
+						owner, confirmation, "Confirm Officer Identity",
+						javax.swing.JOptionPane.YES_NO_OPTION,
 						javax.swing.JOptionPane.WARNING_MESSAGE);
 					if (confirmed != javax.swing.JOptionPane.YES_OPTION)
 					{
@@ -351,8 +330,7 @@ public class FederationPlugin extends Plugin
 		});
 	}
 
-	@Override
-	protected void shutDown()
+	@Override protected void shutDown()
 	{
 		if (inGameBanSyncButton != null)
 		{

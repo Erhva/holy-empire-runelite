@@ -19,16 +19,16 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.function.BooleanSupplier;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
-import net.runelite.client.util.Filepath;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import net.runelite.client.util.Filepath;
 
 /** Pending key is local-only. Only its SHA-256 digest is sent for enrollment. */
 final class FederationOfficerEnrollmentClient
@@ -122,22 +122,43 @@ final class FederationOfficerEnrollmentClient
 		try (Response response = http.newCall(builder.build()).execute())
 		{
 			ResponseBody responseBody = response.body();
-			if (responseBody == null || responseBody.contentLength() > 8192)
+			if (responseBody == null || responseBody.contentLength() > 32768)
 			{
 				throw new IOException("Verification response unavailable");
 			}
 			byte[] raw;
 			try (java.io.InputStream input = responseBody.byteStream())
 			{
-				raw = input.readNBytes(8193);
+				raw = input.readNBytes(32769);
 			}
-			if (raw.length > 8192)
+			if (raw.length > 32768)
 			{
 				throw new IOException("Verification response too large");
 			}
 			if (response.code() != 200)
 			{
-				throw new IOException("Verification service returned HTTP " + response.code());
+				// Only present bounded, printable errors from our pinned HTTPS origin.
+				// Never display arbitrary response bodies or echoed credentials.
+				String detail = "";
+				try
+				{
+					JsonObject problem = new JsonParser()
+											 .parse(new String(raw, StandardCharsets.UTF_8))
+											 .getAsJsonObject();
+					if (problem.has("error"))
+					{
+						String message = problem.get("error").getAsString();
+						if (message.matches("[A-Za-z0-9 .,:;()'\\-]{1,160}"))
+						{
+							detail = ": " + message;
+						}
+					}
+				}
+				catch (RuntimeException ignored)
+				{
+				}
+				throw new IOException("Verification service returned HTTP " + response.code() +
+									  detail);
 			}
 			JsonObject data =
 				new JsonParser().parse(new String(raw, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -269,6 +290,11 @@ final class FederationOfficerEnrollmentClient
 		request.addProperty("ticket", saved.get("ticket").getAsString());
 		JsonObject result = post("status", request, null);
 		String status = result.get("status").getAsString();
+		if ("verified_test".equals(status))
+		{
+			pending(rsn).deleteIfExists();
+			return "Master Discord and in-game verification test passed. No officer key issued.";
+		}
 		if ("approved".equals(status))
 		{
 			if (!stillEligible.getAsBoolean())
@@ -283,6 +309,10 @@ final class FederationOfficerEnrollmentClient
 		if ("expired".equals(status) || "rejected".equals(status))
 		{
 			pending(rsn).deleteIfExists();
+		}
+		if ("awaiting_game".equals(status))
+		{
+			return "Pending Review";
 		}
 		return "Verification status: " + status.replace("_", " ") + ".";
 	}
@@ -311,6 +341,10 @@ final class FederationOfficerEnrollmentClient
 		request.addProperty("challenge", challenge);
 		request.addProperty("role", role);
 		JsonObject result = post("approve", request, approverToken);
+		if ("verified_test".equals(result.get("status").getAsString()))
+		{
+			return "Master identity verification test passed; no admin key or ban access issued.";
+		}
 		if (!"approved".equals(result.get("status").getAsString()))
 		{
 			throw new IOException("The server did not approve this officer");
