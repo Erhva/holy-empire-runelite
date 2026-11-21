@@ -36,8 +36,7 @@ public class FederationPanelUiTest
 		return null;
 	}
 
-	@Test
-	public void chapterSearchKeepsItsFieldWhileFiltering() throws Exception
+	@Test public void chapterSearchKeepsItsFieldWhileFiltering() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -87,8 +86,7 @@ public class FederationPanelUiTest
 			() -> { assertNotNull(named(panel[0], "holyEmpireChapter:Holy Empire")); });
 	}
 
-	@Test
-	public void staleDenialAndLoadingEventsCannotEraseLaterVerifiedRoster() throws Exception
+	@Test public void staleDenialAndLoadingEventsCannotEraseLaterVerifiedRoster() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -106,8 +104,7 @@ public class FederationPanelUiTest
 			() -> { assertNull(named(panel[0], "holyEmpireChapter:Holy Empire")); });
 	}
 
-	@Test
-	public void officerSettingsAppearOnlyForVerifiedOwnerOrDeputy() throws Exception
+	@Test public void officerSettingsAppearOnlyForVerifiedOwnerOrDeputy() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -155,8 +152,7 @@ public class FederationPanelUiTest
 			() -> assertNull(named(panel[0], "holyEmpireOfficerBanSettings")));
 	}
 
-	@Test
-	public void tabsRequireVerifiedOfficerRankAndRosterIsDefault() throws Exception
+	@Test public void tabsRequireVerifiedOfficerRankAndRosterIsDefault() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		final int[] loads = {0};
@@ -201,8 +197,7 @@ public class FederationPanelUiTest
 		panel[0].stopPrivateCacheTimer();
 	}
 
-	@Test
-	public void combinedBanSearchCachesAndRevokes() throws Exception
+	@Test public void combinedBanSearchCachesAndRevokes() throws Exception
 	{
 		FederationPanel[] panel = new FederationPanel[1];
 		int[] loads = {0};
@@ -286,5 +281,34 @@ public class FederationPanelUiTest
 			}
 		}
 		return found;
+	}
+
+	@Test public void chapterRosterDoesNotRenderServerSuppliedNameAsHtml() throws Exception
+	{
+		String untrustedName = "<html><b>Sample &amp; Player</b></html>";
+		String untrustedRank = "<html><i>Untrusted Rank</i></html>";
+		final FederationPanel[] panel = new FederationPanel[1];
+		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
+		Map<String, List<String>> combined =
+			Collections.singletonMap(untrustedName, Collections.singletonList("Holy Chaos"));
+		Map<String, List<WomDirectoryClient.ChapterMember>> chapters = Collections.singletonMap(
+			"Holy Chaos", Collections.singletonList(
+							  new WomDirectoryClient.ChapterMember(untrustedName, untrustedRank)));
+		panel[0].update(combined, chapters);
+		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {
+			JButton chapter = (JButton)named(panel[0], "holyEmpireChapter:Holy Chaos");
+			assertNotNull(chapter);
+			chapter.doClick();
+			JPanel row = (JPanel)named(panel[0], "holyEmpireRosterRow:" + untrustedName);
+			assertNotNull(row);
+			JLabel name = (JLabel)row.getComponent(0);
+			JLabel rank = (JLabel)row.getComponent(1);
+			assertEquals(untrustedName, name.getText());
+			assertEquals(Boolean.TRUE, name.getClientProperty("html.disable"));
+			assertNull(name.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey));
+			assertEquals(Boolean.TRUE, rank.getClientProperty("html.disable"));
+			assertNull(rank.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey));
+		});
 	}
 }

@@ -27,7 +27,7 @@ public class FederationPanel extends PluginPanel
 	private final JPanel navigationTabs = new JPanel(new GridBagLayout());
 	private final JTextField banSearch = new JTextField();
 	private final JTextField banChapterSearch = new JTextField();
-	private final JLabel banChapterTitle = new JLabel();
+	private final JLabel banChapterTitle = SwingTextSafety.plainLabel("");
 	private boolean showingBans = false;
 	private String selectedBanChapter = null;
 	private volatile FederationBanDirectoryClient.Snapshot banDirectory = null;
@@ -215,7 +215,7 @@ public class FederationPanel extends PluginPanel
 	private final JTextField chapterSearch = new JTextField();
 	private final JPanel content = new JPanel();
 	private final JPanel headerCards = new JPanel(new CardLayout());
-	private final JLabel chapterTitle = new JLabel();
+	private final JLabel chapterTitle = SwingTextSafety.plainLabel("");
 	private final JLabel status = new JLabel("Log in to load Holy Empire.");
 	private volatile boolean verified = false;
 	private boolean denied = false;
@@ -641,7 +641,7 @@ public class FederationPanel extends PluginPanel
 
 	private void heading(String text, int size)
 	{
-		JLabel label = new JLabel(text);
+		JLabel label = SwingTextSafety.plainLabel(text);
 		label.setFont(label.getFont().deriveFont(Font.BOLD, (float)size));
 		HolyEmpireTheme.styleSection(label);
 		label.setBorder(BorderFactory.createEmptyBorder(8, 3, 5, 3));
@@ -660,7 +660,7 @@ public class FederationPanel extends PluginPanel
 		row.setLayout(new BoxLayout(row, BoxLayout.Y_AXIS));
 		row.setName("holyEmpireGlobalRow:" + name);
 		HolyEmpireTheme.styleRow(row, HolyEmpireRankDisplay.isEmperor(name), false);
-		JLabel rsn = new JLabel(name);
+		JLabel rsn = SwingTextSafety.plainLabel(name);
 		rsn.setFont(rsn.getFont().deriveFont(Font.BOLD));
 		rsn.setForeground(HolyEmpireRankDisplay.isEmperor(name) ? HolyEmpireRankDisplay.GOLD
 																: HolyEmpireTheme.TEXT);
@@ -669,7 +669,7 @@ public class FederationPanel extends PluginPanel
 		for (String clan : members.getOrDefault(name, Collections.emptyList()))
 		{
 			WomDirectoryClient.ChapterMember member = findRank(name, clan);
-			JLabel rank = new JLabel();
+			JLabel rank = SwingTextSafety.plainLabel("");
 			rank.setName("holyEmpireGlobalRank:" + name + ":" + clan);
 			rank.setAlignmentX(LEFT_ALIGNMENT);
 			if (member != null)
@@ -701,8 +701,17 @@ public class FederationPanel extends PluginPanel
 
 	private void setStatus(String fullText, String displayText)
 	{
+		status.putClientProperty("html.disable", Boolean.TRUE);
 		status.setText(displayText);
-		status.setToolTipText(fullText);
+		status.setToolTipText("<html>" + SwingTextSafety.escapeHtml(fullText) + "</html>");
+	}
+
+	/** Only call with trusted markup and escaped dynamic content. */
+	private void setHtmlStatus(String fullText, String safeHtml)
+	{
+		status.putClientProperty("html.disable", Boolean.FALSE);
+		status.setText(safeHtml);
+		status.setToolTipText("<html>" + SwingTextSafety.escapeHtml(fullText) + "</html>");
 	}
 
 	private void showUnavailable()
@@ -861,10 +870,10 @@ public class FederationPanel extends PluginPanel
 			JPanel lines = new JPanel();
 			lines.setOpaque(false);
 			lines.setLayout(new BoxLayout(lines, BoxLayout.Y_AXIS));
-			JLabel title = new JLabel(clan);
+			JLabel title = SwingTextSafety.plainLabel(clan);
 			title.setFont(title.getFont().deriveFont(Font.BOLD, 12f));
 			title.setAlignmentX(LEFT_ALIGNMENT);
-			JLabel subtitle = new JLabel(info.subtitle());
+			JLabel subtitle = SwingTextSafety.plainLabel(info.subtitle());
 			subtitle.setForeground(HolyEmpireTheme.MUTED);
 			subtitle.setFont(subtitle.getFont().deriveFont(10f));
 			subtitle.setAlignmentX(LEFT_ALIGNMENT);
@@ -897,9 +906,10 @@ public class FederationPanel extends PluginPanel
 		String full = total + " players · " + HolyEmpireChapterCatalog.ORDERED.size() +
 					  " chapters · " + WomDirectoryClient.CLANS.length + " WOM rosters" +
 					  (cachedStale ? " · WOM cached" : "");
-		setStatus(full, "<html>" + total + " players · " + HolyEmpireChapterCatalog.ORDERED.size() +
-							" chapters<br>" + WomDirectoryClient.CLANS.length + " WOM rosters" +
-							(cachedStale ? " · WOM cached" : "") + "</html>");
+		setHtmlStatus(full, "<html>" + total + " players · " +
+								HolyEmpireChapterCatalog.ORDERED.size() + " chapters<br>" +
+								WomDirectoryClient.CLANS.length + " WOM rosters" +
+								(cachedStale ? " · WOM cached" : "") + "</html>");
 	}
 
 	private void addRankRow(WomDirectoryClient.ChapterMember member)
@@ -907,11 +917,11 @@ public class FederationPanel extends PluginPanel
 		JPanel row = new JPanel(new BorderLayout(5, 1));
 		row.setName("holyEmpireRosterRow:" + member.name);
 		HolyEmpireTheme.styleRow(row, HolyEmpireRankDisplay.isEmperor(member.name), false);
-		JLabel name = new JLabel(member.name);
+		JLabel name = SwingTextSafety.plainLabel(member.name);
 		name.setFont(name.getFont().deriveFont(Font.BOLD));
 		name.setForeground(HolyEmpireRankDisplay.isEmperor(member.name) ? HolyEmpireRankDisplay.GOLD
 																		: HolyEmpireTheme.TEXT);
-		JLabel rank = new JLabel(HolyEmpireRankDisplay.title(member));
+		JLabel rank = SwingTextSafety.plainLabel(HolyEmpireRankDisplay.title(member));
 		rank.setName("holyEmpireRank:" + member.name);
 		rank.setIcon(HolyEmpireRankDisplay.icon(member));
 		rank.setIconTextGap(4);
@@ -933,8 +943,9 @@ public class FederationPanel extends PluginPanel
 		{
 			heading("Roster unavailable", 12);
 			addAligned(new JLabel("Wise Old Man group not configured."));
-			setStatus(clan + " · awaiting WOM group ID",
-					  "<html>" + clan + "<br>Awaiting WOM group ID</html>");
+			setHtmlStatus(clan + " · awaiting WOM group ID",
+						  "<html>" + SwingTextSafety.escapeHtml(clan) +
+							  "<br>Awaiting WOM group ID</html>");
 			return;
 		}
 		List<WomDirectoryClient.ChapterMember> all =
@@ -953,9 +964,9 @@ public class FederationPanel extends PluginPanel
 		{
 			addRankRow(member);
 		}
-		setStatus(clan + " · WOM rank order" + (cachedStale ? " · cached" : ""),
-				  "<html>" + clan + "<br>WOM rank order" + (cachedStale ? " · cached" : "") +
-					  "</html>");
+		setHtmlStatus(clan + " · WOM rank order" + (cachedStale ? " · cached" : ""),
+					  "<html>" + SwingTextSafety.escapeHtml(clan) + "<br>WOM rank order" +
+						  (cachedStale ? " · cached" : "") + "</html>");
 	}
 
 	private static boolean banNameMatches(String name, String query)
@@ -987,11 +998,11 @@ public class FederationPanel extends PluginPanel
 		JPanel row = new JPanel(new BorderLayout(4, 1));
 		row.setName("holyEmpireBanEntry");
 		HolyEmpireTheme.styleRow(row, false, true);
-		JLabel name = new JLabel(entry.name);
+		JLabel name = SwingTextSafety.plainLabel(entry.name);
 		name.setFont(name.getFont().deriveFont(Font.BOLD));
 		name.setForeground(HolyEmpireTheme.TEXT);
 		row.add(name, BorderLayout.WEST);
-		JLabel details = new JLabel(
+		JLabel details = SwingTextSafety.plainLabel(
 			(showChapter ? entry.chapter + " · " : "") +
 			(entry.identityStatus.equals("tracked") ? "WOM tracked" : "Name not yet tracked"));
 		details.setFont(details.getFont().deriveFont(10f));
@@ -1078,7 +1089,7 @@ public class FederationPanel extends PluginPanel
 				JPanel desc = new JPanel();
 				desc.setOpaque(false);
 				desc.setLayout(new BoxLayout(desc, BoxLayout.Y_AXIS));
-				JLabel name = new JLabel(chapter);
+				JLabel name = SwingTextSafety.plainLabel(chapter);
 				name.setFont(name.getFont().deriveFont(Font.BOLD, 12f));
 				JLabel secondary = new JLabel(snapshot == null ? "Not synchronized yet"
 															   : (count + " synchronized bans"));
