@@ -2,8 +2,6 @@
 
 **The official RuneLite plugin for the Holy Empire megaclan on World 465.** Find your fellow clanmates, explore the chapters of the Empire, and stay connected to clan events, announcements, and achievements without leaving RuneLite.
 
-**Anyone can install Holy Empire from the RuneLite Plugin Hub. No prior approval, whitelist, or Discord verification is required to download or install the plugin.**
-
 ## Features
 
 - **Recognize Holy Empire members:** See customizable minimap dots, overhead names, and chapter tags in right-click menus and chat. Identify which Holy Empire chapter someone belongs to, even if they're in a different clan chat. Custom identification indicators are disabled in PvP areas and PvP-type worlds.
@@ -11,17 +9,14 @@
 - **Keep up with clan events:** View upcoming, ongoing, and past Empire-wide and chapter events in the Events panel, including event images, descriptions, and locations. Times adjust to your local time zone, with countdowns for approaching events and a clear indicator when an event is happening now.
 - **Respond to Discord events:** Open the original Discord post or use the RSVP options available to verified chapter members, and see event interest totals without hunting through Discord channels.
 - **Read announcements and broadcasts:** Catch up on Holy Empire announcements, follow links to their Discord posts, and receive enabled clan broadcasts and event reminders in RuneLite.
-- **Celebrate clan achievements:** Check **Today's Achievements** for recent Holy Empire accomplishments reported through Wise Old Man.
 - **Spot Holy Empire house hosts:** Highlight Holy Empire player-owned house hosts and optionally move their listings to the top of the house advertisement board.
-- **Make it your own:** Adjust indicator colors, chapter highlights, display priority, event reminders, and broadcast preferences in the Holy Empire settings.
+- **Customize Indicators:** Adjust indicator colors, chapter highlights, display priority, event reminders, and broadcast preferences in the Holy Empire settings.
 
 ## Installation
 
 1. Open **RuneLite**, select **Configuration** (the wrench), and open the **Plugin Hub**.
 2. Search for **Holy Empire** and click **Install**.
 3. Open the **Holy Empire** icon in the RuneLite sidebar.
-
-That's it—**no application or staff approval is necessary to install the plugin**.
 
 Anyone is welcome to install it, including guests and prospective recruits. The plugin recognizes members through the Holy Empire chapter rosters; clan-specific views and actions become available when your RuneScape account appears on a recognized chapter roster. Recent roster changes may take time to synchronize.
 
