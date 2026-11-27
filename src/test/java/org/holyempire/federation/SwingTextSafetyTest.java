@@ -22,7 +22,6 @@ public class SwingTextSafetyTest
 		org.junit.Assert.assertTrue(boxed.contains("&lt;script&gt;"));
 		org.junit.Assert.assertFalse(boxed.contains("<script>"));
 		org.junit.Assert.assertTrue(boxed.contains("<br>"));
-		org.junit.Assert.assertEquals(boxed, SwingTextSafety.boxedTooltip(boxed));
 	}
 
 	@Test public void serverSuppliedHtmlCannotBeInterpretedAsLabelMarkup()

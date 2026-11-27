@@ -33,7 +33,6 @@ final class SwingTextSafety
 	static String boxedTooltip(String source)
 	{
 		if (source == null || source.isEmpty()) return null;
-		if (source.startsWith("<html><table width='280'")) return source;
 		String value = source;
 		if (value.startsWith("<html>") && value.endsWith("</html>"))
 		{
