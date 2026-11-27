@@ -66,12 +66,12 @@ public class WomDirectoryClientTest
 	{
 		assertEquals("test user", WomDirectoryClient.normalize(" Test\u00a0User "));
 	}
-    @Test public void normalizesRuneScapeUnderscores()
-    {
-        assertEquals("my sp00n", WomDirectoryClient.normalize("MY_SP00N"));
-        assertEquals("my sp00n", WomDirectoryClient.normalize(" my__sp00n "));
-        assertEquals("mysp00n", WomDirectoryClient.normalize("mysp00n"));
-    }
+	@Test public void normalizesRuneScapeUnderscores()
+	{
+		assertEquals("my sp00n", WomDirectoryClient.normalize("MY_SP00N"));
+		assertEquals("my sp00n", WomDirectoryClient.normalize(" my__sp00n "));
+		assertEquals("mysp00n", WomDirectoryClient.normalize("mysp00n"));
+	}
 	@Test public void jagexSeparatorsAndDistinctIdentities() throws Exception
 	{
 		assertEquals("my sp00n", WomDirectoryClient.normalize("MY-SP00N"));

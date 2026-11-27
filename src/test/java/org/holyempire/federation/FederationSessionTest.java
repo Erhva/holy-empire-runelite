@@ -142,23 +142,23 @@ public class FederationSessionTest
 		assertTrue(state.publish("alpha", state.generation(), sample("alpha")));
 		assertTrue(state.isEligible());
 	}
-    @Test public void underscoreNamesMatchRosterAndRank()
-    {
-        Map<String, List<String>> roster = new HashMap<>();
-        roster.put("my sp00n", Collections.singletonList("Sacred Order"));
-        Map<String, List<WomDirectoryClient.ChapterMember>> chapters = new HashMap<>();
-        chapters.put("Sacred Order", Collections.singletonList(
-            new WomDirectoryClient.ChapterMember("my sp00n", "sheriff")));
-        FederationSession state = new FederationSession();
-        state.observe("MY_SP00N", "");
-        assertTrue(state.publish("my sp00n", state.generation(),
-            new WomDirectoryClient.Snapshot(roster, chapters)));
-        assertTrue(state.isEligible());
-        assertEquals(Collections.singletonList("Sacred Order"),
-            state.rosterFor("MY_SP00N").get(WomDirectoryClient.normalize("MY_SP00N")));
-        assertEquals("sheriff", state.rankFor("MY_SP00N").rank);
-        assertFalse(state.observe("my sp00n", ""));
-        assertTrue(state.rosterFor("MY_SP00N").containsKey("my sp00n"));
-        assertNull(state.rankFor("MYSP00N"));
-    }
+	@Test public void underscoreNamesMatchRosterAndRank()
+	{
+		Map<String, List<String>> roster = new HashMap<>();
+		roster.put("my sp00n", Collections.singletonList("Sacred Order"));
+		Map<String, List<WomDirectoryClient.ChapterMember>> chapters = new HashMap<>();
+		chapters.put("Sacred Order", Collections.singletonList(
+			new WomDirectoryClient.ChapterMember("my sp00n", "sheriff")));
+		FederationSession state = new FederationSession();
+		state.observe("MY_SP00N", "");
+		assertTrue(state.publish("my sp00n", state.generation(),
+			new WomDirectoryClient.Snapshot(roster, chapters)));
+		assertTrue(state.isEligible());
+		assertEquals(Collections.singletonList("Sacred Order"),
+			state.rosterFor("MY_SP00N").get(WomDirectoryClient.normalize("MY_SP00N")));
+		assertEquals("sheriff", state.rankFor("MY_SP00N").rank);
+		assertFalse(state.observe("my sp00n", ""));
+		assertTrue(state.rosterFor("MY_SP00N").containsKey("my sp00n"));
+		assertNull(state.rankFor("MYSP00N"));
+	}
 }
