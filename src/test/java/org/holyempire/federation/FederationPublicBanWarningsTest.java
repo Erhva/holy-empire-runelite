@@ -7,8 +7,14 @@
 
 package org.holyempire.federation;
 
-import java.util.*;
-import javax.swing.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -25,8 +31,7 @@ public class FederationPublicBanWarningsTest
 		hashes.add(FederationPublicBanWarnings.hash("Rostered"));
 	}
 
-	@Test
-	public void regularMembersWarnOnlyNonRosteredNames()
+	@Test public void regularMembersWarnOnlyNonRosteredNames()
 	{
 		prepare();
 		assertTrue(FederationPublicBanWarnings.matches(" unROSTERED ", hashes, roster));
@@ -39,8 +44,7 @@ public class FederationPublicBanWarningsTest
 					message.contains("Holy Chaos"));
 	}
 
-	@Test
-	public void nonKeyMemberRecruitPopupUsesExactRequestedWording()
+	@Test public void nonKeyMemberRecruitPopupUsesExactRequestedWording()
 	{
 		assertEquals("HOLY EMPIRE BAN-LIST WARNING\n\n"
 						 + "Unrostered appears on a chapter ban-list\n\n"
@@ -52,8 +56,7 @@ public class FederationPublicBanWarningsTest
 						.contains("Holy Chaos"));
 	}
 
-	@Test
-	public void keyHolderCanStillReceivePrivateWarningsForRosteredTarget()
+	@Test public void keyHolderCanStillReceivePrivateWarningsForRosteredTarget()
 	{
 		prepare();
 		Map<String, FederationBanDirectoryClient.Chapter> chapter = new LinkedHashMap<>();
@@ -71,8 +74,7 @@ public class FederationPublicBanWarningsTest
 			FederationPublicBanWarnings.privateVisible(false, false, "Rostered", matches, roster));
 	}
 
-	@Test
-	public void womMemberWithoutNativeClanStillGetsRecruitmentWarnings()
+	@Test public void womMemberWithoutNativeClanStillGetsRecruitmentWarnings()
 	{
 		prepare();
 		FederationSession session = new FederationSession();
@@ -95,8 +97,7 @@ public class FederationPublicBanWarningsTest
 		assertFalse(session.publicBanWarningMatch("outsider", "Unrostered"));
 	}
 
-	@Test
-	public void sessionClearsNonMemberWarningsOnAccountSwitch()
+	@Test public void sessionClearsNonMemberWarningsOnAccountSwitch()
 	{
 		prepare();
 		FederationSession session = new FederationSession();

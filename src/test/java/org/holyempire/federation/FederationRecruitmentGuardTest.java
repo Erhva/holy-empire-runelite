@@ -7,7 +7,11 @@
 
 package org.holyempire.federation;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -30,8 +34,7 @@ public class FederationRecruitmentGuardTest
 			chapters);
 	}
 
-	@Test
-	public void matchesOnlyNativeRecruitMenuOption()
+	@Test public void matchesOnlyNativeRecruitMenuOption()
 	{
 		assertEquals("Banned One", FederationRecruitmentGuard.recruitmentTarget(
 									   "Recruit", "Banned One", "Other Name"));
@@ -49,8 +52,7 @@ public class FederationRecruitmentGuardTest
 		}
 	}
 
-	@Test
-	public void exactCaseInsensitiveNameAndAllMatchedChapters()
+	@Test public void exactCaseInsensitiveNameAndAllMatchedChapters()
 	{
 		List<String> matches =
 			FederationRecruitmentGuard.matchingChapters(snapshot(), "banned   one");
@@ -60,8 +62,7 @@ public class FederationRecruitmentGuardTest
 		assertTrue(FederationRecruitmentGuard.matchingChapters(null, "Banned One").isEmpty());
 	}
 
-	@Test
-	public void keyMemberRecruitPopupUsesExactRequestedWording()
+	@Test public void keyMemberRecruitPopupUsesExactRequestedWording()
 	{
 		assertEquals("HOLY EMPIRE BAN-LIST WARNING\n\n"
 						 + "Banned One is banned in:\nHoly Chaos\nHoly Empire\n\n"
@@ -75,8 +76,7 @@ public class FederationRecruitmentGuardTest
 			"Invalid#Name", Collections.singletonList("Holy Chaos")));
 	}
 
-	@Test
-	public void warnedRecruitmentDisplaysChaptersOnlyToApprovedOfficer()
+	@Test public void warnedRecruitmentDisplaysChaptersOnlyToApprovedOfficer()
 	{
 		String matching = FederationRecruitmentGuard.warningText(
 			"Banned One", FederationRecruitmentGuard.matchingChapters(snapshot(), "Banned One"),

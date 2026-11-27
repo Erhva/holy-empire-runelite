@@ -8,7 +8,10 @@
 package org.holyempire.federation;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.swing.SwingUtilities;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -31,8 +34,7 @@ public class FederationBanSessionPrivacyTest
 			chapter, Collections.singletonList("Test Ban"), CAPTURED);
 	}
 
-	@Test
-	public void aQueuedUploadMustMatchOriginalAccountChapterAndRank()
+	@Test public void aQueuedUploadMustMatchOriginalAccountChapterAndRank()
 	{
 		FederationSession session = new FederationSession();
 		session.observe("alpha", "Holy Chaos");
@@ -57,8 +59,7 @@ public class FederationBanSessionPrivacyTest
 														   capture("Holy Chaos"), true));
 	}
 
-	@Test
-	public void temporaryPrivateBansAreClearedOnLogoutOrLossOfAccess() throws Exception
+	@Test public void temporaryPrivateBansAreClearedOnLogoutOrLossOfAccess() throws Exception
 	{
 		FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());

@@ -8,7 +8,7 @@
 package org.holyempire.federation;
 
 import net.runelite.api.EquipmentInventorySlot;
-import net.runelite.api.InventoryID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.ItemID;
@@ -43,7 +43,7 @@ final class ClanVexillumEquipTrigger
 
 	boolean onContainerChanged(int containerId, ItemContainer equipment, long now)
 	{
-		if (containerId != InventoryID.EQUIPMENT.getId() || equipment == null)
+		if (containerId != InventoryID.WORN || equipment == null)
 		{
 			return false;
 		}

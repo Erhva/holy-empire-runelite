@@ -7,7 +7,11 @@
 
 package org.holyempire.federation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.swing.Icon;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -20,8 +24,7 @@ public class HolyEmpireChapterCatalogTest
 		"Holy Soul",	"Holy Calf",  "Holy Lights",  "Holy Smokes", "Sacred Blade",
 		"Ultramarines", "Holy Chaos"};
 
-	@Test
-	public void orderedChapterCardsAreUniqueAndComplete()
+	@Test public void orderedChapterCardsAreUniqueAndComplete()
 	{
 		List<String> actual = new ArrayList<>();
 		Set<String> unique = new HashSet<>();
@@ -37,8 +40,7 @@ public class HolyEmpireChapterCatalogTest
 		assertArrayEquals(EXPECTED, actual.toArray(new String[0]));
 	}
 
-	@Test
-	public void rosterSourceMappingIsUnchanged()
+	@Test public void rosterSourceMappingIsUnchanged()
 	{
 		Set<String> supplied = new HashSet<>(Arrays.asList(WomDirectoryClient.CLANS));
 		for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
@@ -53,8 +55,7 @@ public class HolyEmpireChapterCatalogTest
 		assertEquals("P2P only · PvP clan", HolyEmpireChapterCatalog.get("Holy Guard").subtitle());
 	}
 
-	@Test
-	public void properOsrsRankImagesAreBundled()
+	@Test public void properOsrsRankImagesAreBundled()
 	{
 		for (String role : Arrays.asList("owner", "deputy_owner", "tzkal", "vanguard", "brigadier",
 										 "legend", "supervisor", "bronze", "captain"))

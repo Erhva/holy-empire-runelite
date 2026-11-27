@@ -12,8 +12,7 @@ import static org.junit.Assert.*;
 
 public class FederationApplicantOneTimeBypassTest
 {
-	@Test
-	public void oneApprovedRetryAllowsOnlyTheNamedApplicant()
+	@Test public void oneApprovedRetryAllowsOnlyTheNamedApplicant()
 	{
 		FederationApplicantOneTimeBypass pass = new FederationApplicantOneTimeBypass();
 		assertTrue(pass.arm("Erhva", 12, "Holy Chaos", "Harohad", 1000));
@@ -22,8 +21,7 @@ public class FederationApplicantOneTimeBypassTest
 					pass.consume("Erhva", 12, "Holy Chaos", "Harohad", 1002));
 	}
 
-	@Test
-	public void otherApplicantCannotUsePriorApproval()
+	@Test public void otherApplicantCannotUsePriorApproval()
 	{
 		FederationApplicantOneTimeBypass pass = new FederationApplicantOneTimeBypass();
 		assertTrue(pass.arm("Erhva", 12, "Holy Chaos", "Harohad", 2000));
@@ -32,8 +30,7 @@ public class FederationApplicantOneTimeBypassTest
 					pass.consume("Erhva", 12, "Holy Chaos", "Harohad", 2002));
 	}
 
-	@Test
-	public void approvalCannotTransferAcrossAccountsChaptersOrLogins()
+	@Test public void approvalCannotTransferAcrossAccountsChaptersOrLogins()
 	{
 		FederationApplicantOneTimeBypass pass = new FederationApplicantOneTimeBypass();
 		assertTrue(pass.arm("Erhva", 12, "Holy Chaos", "Harohad", 3000));
@@ -44,8 +41,7 @@ public class FederationApplicantOneTimeBypassTest
 		assertFalse(pass.consume("Erhva", 12, "Holy Empire", "Harohad", 3021));
 	}
 
-	@Test
-	public void approvalExpiresAndDoesNotSurviveLogout()
+	@Test public void approvalExpiresAndDoesNotSurviveLogout()
 	{
 		FederationApplicantOneTimeBypass pass = new FederationApplicantOneTimeBypass();
 		assertTrue(pass.arm("Erhva", 12, "Holy Chaos", "Harohad", 5000));
@@ -56,8 +52,7 @@ public class FederationApplicantOneTimeBypassTest
 		assertFalse(pass.consume("Erhva", 12, "Holy Chaos", "Harohad", 6001));
 	}
 
-	@Test
-	public void neverAcceptBlankOrInvalidApplicantApproval()
+	@Test public void neverAcceptBlankOrInvalidApplicantApproval()
 	{
 		FederationApplicantOneTimeBypass pass = new FederationApplicantOneTimeBypass();
 		assertFalse(pass.arm("Erhva", 12, "Holy Chaos", "Invalid#RSN", 7000));

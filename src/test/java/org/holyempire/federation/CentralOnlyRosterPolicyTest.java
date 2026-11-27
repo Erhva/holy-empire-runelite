@@ -15,8 +15,7 @@ import static org.junit.Assert.*;
 /** CDN outages must not send thousands of client requests to WOM. */
 public class CentralOnlyRosterPolicyTest
 {
-	@Test
-	public void missingCdnEndpointNeverFallsBackToWom() throws Exception
+	@Test public void missingCdnEndpointNeverFallsBackToWom() throws Exception
 	{
 		for (String endpoint : new String[] {null, "", "   "})
 		{
@@ -32,8 +31,7 @@ public class CentralOnlyRosterPolicyTest
 		}
 	}
 
-	@Test
-	public void publicClientDoesNotExposeOldDirectFallbackEntrypoint()
+	@Test public void publicClientDoesNotExposeOldDirectFallbackEntrypoint()
 	{
 		for (java.lang.reflect.Method method : WomDirectoryClient.class.getDeclaredMethods())
 		{

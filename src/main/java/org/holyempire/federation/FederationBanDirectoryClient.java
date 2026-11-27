@@ -7,12 +7,25 @@
 
 package org.holyempire.federation;
 
-import com.google.gson.*;
-import java.io.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * Read-only combined private ban view. Retrieved only with a verified officer's
@@ -34,13 +47,27 @@ final class FederationBanDirectoryClient
 		final String name;
 		final String identityStatus;
 		final long capturedAt;
+		final String category;
+		final String reason;
+		final String reasonOperator;
+		final boolean discordPosted;
 
 		Entry(String chapter, String name, String identityStatus, long capturedAt)
+		{
+			this(chapter, name, identityStatus, capturedAt, "", "", "", false);
+		}
+
+		Entry(String chapter, String name, String identityStatus, long capturedAt,
+			  String category, String reason, String reasonOperator, boolean discordPosted)
 		{
 			this.chapter = chapter;
 			this.name = name;
 			this.identityStatus = identityStatus;
 			this.capturedAt = capturedAt;
+			this.category = category;
+			this.reason = reason;
+			this.reasonOperator = reasonOperator;
+			this.discordPosted = discordPosted;
 		}
 	}
 
@@ -170,7 +197,20 @@ final class FederationBanDirectoryClient
 					{
 						throw new IOException("Invalid private ban directory entry.");
 					}
-					entries.add(new Entry(from, name, identity, when));
+					String category = row.has("category") && !row.get("category").isJsonNull()
+						? row.get("category").getAsString() : "";
+					String reason = row.has("reason") && !row.get("reason").isJsonNull()
+						? row.get("reason").getAsString() : "";
+					String operator = row.has("reason_operator") &&
+						!row.get("reason_operator").isJsonNull()
+						? row.get("reason_operator").getAsString() : "";
+					boolean published = row.has("discord_posted") &&
+						row.get("discord_posted").getAsBoolean();
+					if ((!category.isEmpty() && !FederationBanReasonClient.CATEGORIES.contains(category)) ||
+						reason.length() > 400 || operator.length() > 32)
+						throw new IOException("Invalid private ban reason metadata.");
+					entries.add(new Entry(from, name, identity, when,
+						category, reason, operator, published));
 				}
 				return new Snapshot(entries, chapters);
 			}

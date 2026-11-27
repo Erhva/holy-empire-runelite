@@ -14,6 +14,17 @@ import static org.junit.Assert.*;
 
 public class SwingTextSafetyTest
 {
+	@org.junit.Test public void boxedTooltipContainsWrappedAndEscapedContent()
+	{
+		String input = "<script>" + "explanation ".repeat(50);
+		String boxed = SwingTextSafety.boxedTooltip(input);
+		org.junit.Assert.assertTrue(boxed.startsWith("<html><table width='280'"));
+		org.junit.Assert.assertTrue(boxed.contains("&lt;script&gt;"));
+		org.junit.Assert.assertFalse(boxed.contains("<script>"));
+		org.junit.Assert.assertTrue(boxed.contains("<br>"));
+		org.junit.Assert.assertEquals(boxed, SwingTextSafety.boxedTooltip(boxed));
+	}
+
 	@Test public void serverSuppliedHtmlCannotBeInterpretedAsLabelMarkup()
 	{
 		String malicious = "<html><b>Player &amp; Rank</b></html>";

@@ -7,10 +7,20 @@
 
 package org.holyempire.federation;
 
-import java.awt.*;
-import java.util.*;
+import java.awt.Component;
+import java.awt.Container;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import javax.swing.*;
+import java.util.Map;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -107,49 +117,65 @@ public class FederationPanelUiTest
 	@Test public void officerSettingsAppearOnlyForVerifiedOwnerOrDeputy() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
-		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
-		panel[0].setOfficerSettingsOpener(() -> {});
-		Map<String, List<String>> roster =
-			Collections.singletonMap("alpha", Collections.singletonList("Holy Empire"));
-		panel[0].update(roster, Collections.emptyMap());
+		final java.util.concurrent.atomic.AtomicBoolean connected =
+			new java.util.concurrent.atomic.AtomicBoolean(false);
+		final int[] connectCalls = {0};
+		SwingUtilities.invokeAndWait(() -> {
+			panel[0] = new FederationPanel();
+			panel[0].setDiscordConnector(() -> connectCalls[0]++);
+			panel[0].setDiscordAuthorization(connected::get);
+		});
+		panel[0].update(Collections.singletonMap("alpha", Collections.singletonList("Holy Empire")),
+						Collections.emptyMap());
 		SwingUtilities.invokeAndWait(() -> {});
-		SwingUtilities.invokeAndWait(
-			() -> assertNull(named(panel[0], "holyEmpireOfficerBanSettings")));
-
-		// The owner/deputy-only control appears within Ban List, never the roster.
+		SwingUtilities.invokeAndWait(() -> {
+			JButton global = (JButton)named(panel[0], "holyEmpireDiscordVerify");
+			assertNotNull(global);
+			assertTrue(global.isVisible());
+			global.doClick();
+			assertEquals(1, connectCalls[0]);
+			assertNull(named(panel[0], "holyEmpireOfficerBanSettings"));
+			assertNull(named(panel[0], "holyEmpireAdminConnectOwner"));
+			assertNull(named(panel[0], "holyEmpireRsvpOneClickConnect"));
+		});
+		// The plugin grants this flag only after native rank + server role checks.
 		panel[0].setOfficerSettingsEligible(true);
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {
-			assertNull(named(panel[0], "holyEmpireOfficerBanSettings"));
 			JToggleButton bans = (JToggleButton)named(panel[0], "holyEmpireBanListTab");
-			assertNotNull(bans);
+			assertTrue(bans.isVisible());
 			bans.doClick();
-			JButton admin = (JButton)named(panel[0], "holyEmpireOfficerBanSettings");
-			assertNotNull(admin);
-			assertEquals("Admin Verification", admin.getText());
-			((JToggleButton)named(panel[0], "holyEmpireRosterTab")).doClick();
+			assertNotNull(named(panel[0], "holyEmpireBanRefresh"));
 			assertNull(named(panel[0], "holyEmpireOfficerBanSettings"));
-			bans.doClick();
-			assertNotNull(named(panel[0], "holyEmpireOfficerBanSettings"));
+			assertTrue(((JButton)named(panel[0], "holyEmpireDiscordVerify")).isVisible());
 		});
-
+		connected.set(true);
+		panel[0].chapterEventsConnected(() -> true);
+		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {
+			assertFalse(((JButton)named(panel[0], "holyEmpireDiscordVerify")).isVisible());
+			assertTrue(((JToggleButton)named(panel[0], "holyEmpireBanListTab")).isSelected());
+		});
 		panel[0].setOfficerSettingsEligible(false);
 		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {
+			assertFalse(((JToggleButton)named(panel[0], "holyEmpireBanListTab")).isVisible());
+			assertTrue(((JToggleButton)named(panel[0], "holyEmpireAnnouncementsTab")).isSelected());
+		});
+		connected.set(false);
+		panel[0].chapterEventsExpired(() -> true);
+		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(
-			() -> assertNull(named(panel[0], "holyEmpireOfficerBanSettings")));
-
-		// Rapid grant then revoke before EDT dispatch must not leave controls visible.
+			() -> assertTrue(((JButton)named(panel[0], "holyEmpireDiscordVerify")).isVisible()));
+		// Queued grants cannot resurrect revoked tools.
 		panel[0].setOfficerSettingsEligible(true);
 		panel[0].setOfficerSettingsEligible(false);
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(
-			() -> assertNull(named(panel[0], "holyEmpireOfficerBanSettings")));
-
-		panel[0].setOfficerSettingsEligible(true);
-		panel[0].showNotVerified();
-		SwingUtilities.invokeAndWait(() -> {});
-		SwingUtilities.invokeAndWait(
-			() -> assertNull(named(panel[0], "holyEmpireOfficerBanSettings")));
+			()
+				-> assertFalse(
+					((JToggleButton)named(panel[0], "holyEmpireBanListTab")).isVisible()));
+		panel[0].stopPrivateCacheTimer();
 	}
 
 	@Test public void tabsRequireVerifiedOfficerRankAndRosterIsDefault() throws Exception
@@ -169,11 +195,13 @@ public class FederationPanelUiTest
 			assertTrue(roster.isSelected());
 			assertFalse(bans.isVisible());
 			JPanel navigation = (JPanel)named(panel[0], "holyEmpireNavigationTabs");
-			navigation.setSize(280, 44);
+			navigation.setSize(280, 135);
 			navigation.doLayout();
-			assertTrue(
-				"Roster is centered within Swing pixel rounding",
-				Math.abs(navigation.getWidth() / 2 - (roster.getX() + roster.getWidth() / 2)) <= 1);
+			JToggleButton events = (JToggleButton)named(panel[0], "holyEmpireEventsTab");
+			assertTrue("Events are available to verified non-officers", events.isVisible());
+			assertTrue("Events appear to the left of Roster",
+					   events.getX() < roster.getX() && events.getWidth() > 0);
+			assertTrue("Events must not require an officer rank", events.isEnabled());
 			assertNotNull(named(panel[0], "holyEmpireGlobalSearch"));
 		});
 		panel[0].setOfficerSettingsEligible(true);
@@ -191,10 +219,105 @@ public class FederationPanelUiTest
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {
 			assertFalse(((JToggleButton)named(panel[0], "holyEmpireBanListTab")).isVisible());
-			assertTrue(((JToggleButton)named(panel[0], "holyEmpireRosterTab")).isSelected());
+			assertTrue(((JToggleButton)named(panel[0], "holyEmpireAnnouncementsTab")).isSelected());
 			assertNull(named(panel[0], "holyEmpireBanRefresh"));
 		});
 		panel[0].stopPrivateCacheTimer();
+	}
+
+	@Test public void synchronizedEmptyBanListShowsNoBansAndZeroCount() throws Exception
+	{
+		FederationPanel[] panel = {null};
+		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
+		try
+		{
+			panel[0].update(
+				Collections.singletonMap("officer", Collections.singletonList("Holy Chaos")),
+				Collections.emptyMap());
+			panel[0].setOfficerSettingsEligible(true);
+			SwingUtilities.invokeAndWait(() -> {});
+			SwingUtilities.invokeAndWait(
+				() -> { ((JToggleButton)named(panel[0], "holyEmpireBanListTab")).doClick(); });
+			Map<String, FederationBanDirectoryClient.Chapter> chapters = new LinkedHashMap<>();
+			chapters.put("Holy Chaos",
+						 new FederationBanDirectoryClient.Chapter("Holy Chaos", 1795000000, 2));
+			panel[0].displayBanDirectory(
+				new FederationBanDirectoryClient.Snapshot(Collections.emptyList(), chapters),
+				() -> true);
+			SwingUtilities.invokeAndWait(() -> {});
+			SwingUtilities.invokeAndWait(() -> {
+				JLabel label = (JLabel)named(panel[0], "holyEmpireBanChapterStatus:Holy Chaos");
+				JLabel count = (JLabel)named(panel[0], "holyEmpireBanChapterCount:Holy Chaos");
+				assertNotNull(label);
+				assertNotNull(count);
+				assertEquals("Synchronized - No Bans", label.getText());
+				assertEquals("0", count.getText());
+				JLabel other = (JLabel)named(panel[0], "holyEmpireBanChapterStatus:Holy Empire");
+				assertEquals("Not synchronized yet", other.getText());
+				((JButton)named(panel[0], "holyEmpireBanChapter:Holy Chaos")).doClick();
+				assertTrue("Empty synchronized chapter must remain browsable",
+						   named(panel[0], "holyEmpireBanChapterBack") != null);
+			});
+		}
+		finally
+		{
+			panel[0].stopPrivateCacheTimer();
+		}
+	}
+
+	@Test public void clearBanReasonButtonRequiresOwnChapterAndStoredReason() throws Exception
+	{
+		FederationPanel[] panel = new FederationPanel[1];
+		java.util.concurrent.atomic.AtomicReference<String> target =
+			new java.util.concurrent.atomic.AtomicReference<>("");
+		java.util.concurrent.atomic.AtomicInteger revision =
+			new java.util.concurrent.atomic.AtomicInteger();
+		SwingUtilities.invokeAndWait(() -> {
+			panel[0] = new FederationPanel();
+			panel[0].setBanDirectoryLoader(force -> {});
+			panel[0].setBanReasonClearAction((entry, rev) -> {
+				target.set(entry.name);
+				revision.set(rev);
+			}, entry -> entry.chapter.equals("Holy Chaos"));
+		});
+		try
+		{
+			panel[0].update(Map.of("Officer", List.of("Holy Chaos")), Collections.emptyMap());
+			panel[0].setOfficerSettingsEligible(true);
+			SwingUtilities.invokeAndWait(() ->
+				((JToggleButton)named(panel[0], "holyEmpireBanListTab")).doClick());
+			Map<String,FederationBanDirectoryClient.Chapter> chapters = new LinkedHashMap<>();
+			chapters.put("Holy Chaos",
+				new FederationBanDirectoryClient.Chapter("Holy Chaos", 1795000000, 7));
+			chapters.put("Holy Empire",
+				new FederationBanDirectoryClient.Chapter("Holy Empire", 1795000000, 8));
+			FederationBanDirectoryClient.Snapshot snapshot =
+				new FederationBanDirectoryClient.Snapshot(Arrays.asList(
+					new FederationBanDirectoryClient.Entry("Holy Chaos", "Annotated A",
+						"tracked", 1795000000, "Other", "Entered by mistake", "Officer", false),
+					new FederationBanDirectoryClient.Entry("Holy Chaos", "No Reason B",
+						"tracked", 1795000000),
+					new FederationBanDirectoryClient.Entry("Holy Empire", "Annotated C",
+						"tracked", 1795000000, "Begging", "", "Other Officer", true)),
+					chapters);
+			panel[0].displayBanDirectory(snapshot, () -> true);
+			SwingUtilities.invokeAndWait(() -> {});
+			SwingUtilities.invokeAndWait(() -> {
+				((JTextField)named(panel[0], "holyEmpireBanGlobalSearch")).setText("Annotated");
+				JButton clear = (JButton)named(panel[0],
+					"holyEmpireClearBanReason:Holy Chaos:Annotated A");
+				assertNotNull("Own chapter's saved reason can be cleared", clear);
+				assertNull("Other chapters cannot be edited",
+					named(panel[0], "holyEmpireClearBanReason:Holy Empire:Annotated C"));
+				clear.doClick();
+				assertEquals("Annotated A",target.get());
+				assertEquals(7,revision.get());
+				((JTextField)named(panel[0], "holyEmpireBanGlobalSearch")).setText("No Reason");
+				assertNull("No clear button for empty annotations",
+					named(panel[0], "holyEmpireClearBanReason:Holy Chaos:No Reason B"));
+			});
+		}
+		finally { panel[0].stopPrivateCacheTimer(); }
 	}
 
 	@Test public void combinedBanSearchCachesAndRevokes() throws Exception

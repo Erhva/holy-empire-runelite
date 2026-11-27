@@ -8,7 +8,12 @@
 package org.holyempire.federation;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /** Local, user-initiated evidence snapshots; no HTTP or automatic uploads. */
 final class FederationBanRegistry
@@ -54,7 +59,8 @@ final class FederationBanRegistry
 			return null;
 		}
 		String cleaned = raw.replace('\u00a0', ' ').trim().replaceAll(" +", " ");
-		return cleaned.matches("[A-Za-z0-9 _-]{1,12}") ? cleaned : null;
+		return cleaned.matches("[A-Za-z0-9 _-]{1,12}") &&
+			WomDirectoryClient.normalize(cleaned).matches("[a-z0-9 ]{1,12}") ? cleaned : null;
 	}
 
 	static Snapshot fromVisibleWidget(String chapter, List<String> rawNames, Instant capturedAt)
@@ -78,11 +84,13 @@ final class FederationBanRegistry
 				names.putIfAbsent(WomDirectoryClient.normalize(name), name);
 			}
 		}
-		if (names.isEmpty())
+		if (names.isEmpty() &&
+			rawNames.stream().anyMatch(value -> value != null && !value.trim().isEmpty()))
 		{
-			throw new IllegalArgumentException(
-				"No banned names were detected; the previous snapshot was not changed.");
+			throw new IllegalArgumentException("Ban-list entries could not be read.");
 		}
+		// An explicitly captured empty widget is authoritative and replaces
+		// the previous chapter snapshot when synced by an officer.
 		if (names.size() > MAX_PER_CHAPTER)
 		{
 			throw new IllegalArgumentException(

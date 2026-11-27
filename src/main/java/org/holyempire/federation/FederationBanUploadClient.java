@@ -14,6 +14,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -26,6 +31,20 @@ import okhttp3.ResponseBody;
 final class FederationBanUploadClient
 {
 	static final String OFFICIAL_ENDPOINT = "https://bans.holyempireosrs.cc";
+
+	static final class Receipt
+	{
+		final String message;
+		final int revision;
+		final List<String> newBans;
+
+		Receipt(String message, int revision, List<String> newBans)
+		{
+			this.message = message;
+			this.revision = revision;
+			this.newBans = Collections.unmodifiableList(new ArrayList<>(newBans));
+		}
+	}
 
 	private FederationBanUploadClient()
 	{
@@ -79,6 +98,12 @@ final class FederationBanUploadClient
 
 	static String send(FederationBanRegistry.Snapshot capture, String base, String token,
 					   OkHttpClient http) throws Exception
+	{
+		return sendReceipt(capture, base, token, http).message;
+	}
+
+	static Receipt sendReceipt(FederationBanRegistry.Snapshot capture, String base,
+						  String token, OkHttpClient http) throws Exception
 	{
 		if (!acceptedEndpoint(base))
 		{
@@ -161,8 +186,39 @@ final class FederationBanUploadClient
 			{
 				throw new java.io.IOException("Ban-sync acknowledgement did not match capture.");
 			}
-			return "Synced " + capture.names.size() + " bans for " + capture.chapter +
-				" (revision " + result.get("revision").getAsInt() + ").";
+			int revision = result.get("revision").getAsInt();
+			if (revision < 1)
+				throw new java.io.IOException("Ban-sync revision was invalid.");
+			Set<String> available = new HashSet<>();
+			for (String name : capture.names)
+				available.add(WomDirectoryClient.normalize(name));
+			Set<String> seen = new HashSet<>();
+			List<String> fresh = new ArrayList<>();
+			if (result.has("new_bans"))
+			{
+				JsonArray additions = result.getAsJsonArray("new_bans");
+				if (additions == null || additions.size() > capture.names.size())
+					throw new java.io.IOException("Invalid synced ban changes.");
+				for (com.google.gson.JsonElement element : additions)
+				{
+					String name = element.getAsString();
+					String normalizedName = WomDirectoryClient.normalize(name);
+					if (FederationBanRegistry.validName(name) == null ||
+						!available.contains(normalizedName) || !seen.add(normalizedName))
+						throw new java.io.IOException("Unexpected synced ban name.");
+					fresh.add(name);
+				}
+			}
+			int removed = result.has("removed_bans")
+				? result.get("removed_bans").getAsInt() : 0;
+			if (removed < 0 || removed > FederationBanRegistry.MAX_PER_CHAPTER)
+				throw new java.io.IOException("Invalid removed-ban count.");
+			String message = "Synced " + capture.names.size() + " bans for " +
+				capture.chapter + " (revision " + revision + ").";
+			if (removed > 0)
+				message += " Removed " + removed + " no-longer-banned player" +
+					(removed == 1 ? "" : "s") + " from the chapter list.";
+			return new Receipt(message, revision, fresh);
 		}
 	}
 }

@@ -24,8 +24,7 @@ public class FederationOfficerCredentialStoreTest
 	private static final String SAMPLE =
 		"Example_officer_token_abcdefghijklmnopqrstuvwxyz0123456789";
 
-	@Test
-	public void localKeysAreAccountScopedAndPrivate() throws Exception
+	@Test public void localKeysAreAccountScopedAndPrivate() throws Exception
 	{
 		Path root = tmp.getRoot().toPath().resolve("officers");
 		FederationOfficerCredentialStore store =
@@ -46,8 +45,7 @@ public class FederationOfficerCredentialStoreTest
 		assertEquals("", store.read("Erhva"));
 	}
 
-	@Test
-	public void invalidTokensCannotBeSaved() throws Exception
+	@Test public void invalidTokensCannotBeSaved() throws Exception
 	{
 		Path dir = tmp.getRoot().toPath().resolve("officer-private");
 		FederationOfficerCredentialStore store =
@@ -71,8 +69,7 @@ public class FederationOfficerCredentialStoreTest
 		assertFalse(Files.exists(dir));
 	}
 
-	@Test
-	public void symlinkCredentialIsRejected() throws Exception
+	@Test public void symlinkCredentialIsRejected() throws Exception
 	{
 		Path dir = tmp.getRoot().toPath().resolve("officer-private");
 		FederationOfficerCredentialStore store =
@@ -91,8 +88,7 @@ public class FederationOfficerCredentialStoreTest
 		}
 	}
 
-	@Test
-	public void legacyDirectoryMigrationIsDeclared()
+	@Test public void legacyDirectoryMigrationIsDeclared()
 	{
 		PluginDescriptor desc = FederationPlugin.class.getAnnotation(PluginDescriptor.class);
 		assertEquals("holy-empire", desc.internalName());

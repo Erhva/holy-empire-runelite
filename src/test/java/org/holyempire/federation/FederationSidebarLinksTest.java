@@ -38,8 +38,7 @@ public class FederationSidebarLinksTest
 		return null;
 	}
 
-	@Test
-	public void bothIconButtonsHaveExactDestinationsAndBundledArtwork() throws Exception
+	@Test public void bothIconButtonsHaveExactDestinationsAndBundledArtwork() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -73,8 +72,7 @@ public class FederationSidebarLinksTest
 		assertNotNull(FederationPanel.class.getResource("/social-icons/clanfinder.png"));
 	}
 
-	@Test
-	public void shortcutButtonsProvideVisibleHoverAndHandCursor() throws Exception
+	@Test public void shortcutButtonsProvideVisibleHoverAndHandCursor() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -119,8 +117,7 @@ public class FederationSidebarLinksTest
 		});
 	}
 
-	@Test
-	public void shortcutsRemainAtTheTopThroughUnverifiedAndChapterViews() throws Exception
+	@Test public void shortcutsRemainAtTheTopThroughUnverifiedAndChapterViews() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());

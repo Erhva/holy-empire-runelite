@@ -16,15 +16,13 @@ import static org.junit.Assert.*;
 
 public class FederationBrandingTest
 {
-	@Test
-	public void federationDotDefaultMatchesUserIconBlue()
+	@Test public void federationDotDefaultMatchesUserIconBlue()
 	{
 		Color color = FederationPalette.DEFAULT_DOT_COLOR;
 		assertEquals(new Color(152, 200, 248), color);
 	}
 
-	@Test
-	public void toolbarIconResourceIsPackaged() throws Exception
+	@Test public void toolbarIconResourceIsPackaged() throws Exception
 	{
 		try (InputStream input = getClass().getResourceAsStream("/holy-empire-icon.png"))
 		{

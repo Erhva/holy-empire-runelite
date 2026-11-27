@@ -1,30 +1,35 @@
-# Holy Empire
+# Holy Empire — RuneLite Plugin
 
-**Holy Empire** is the RuneLite plugin for Holy Empire, an Old School RuneScape megaclan made up of **17 in-game clans (CCs)**. Although Empire members belong to different clan chats, this plugin helps you recognize them and stay connected across the entire Empire.
+The **Holy Empire** RuneLite plugin helps members of the Holy Empire megaclan on World 465 find their chapter, recognize fellow members, and participate in clan activities across different clan chats.
 
 ## Features
 
-- **Spot fellow Empire members:** In-game player indicators, overhead name highlights, and minimap dots help you recognize Holy Empire players, including members of other CCs.
-- **Choose colors for each CC:** Customize each chapter's player indicator and minimap colors so you can tell different Holy Empire clans apart at a glance.
-- **Find clanmates:** Browse chapter rosters and search for Holy Empire members in the plugin's side panel. Player menu tags can also show their chapter.
-- **See shared ban warnings:** When recruiting, the plugin warns you if an applicant appears on Holy Empire's shared ban list, including bans from other CCs. Warnings help officers make informed decisions and do not automatically block recruitment.
+- **Cross-chapter roster:** Search member names, browse chapter rosters and ranks, and open Wise Old Man and hiscores profiles.
+- **Member indicators:** Optional overhead names, minimap dots, and right-click chapter labels. Configure per-chapter colors and their priority relative to RuneLite's existing indicators. Player-identification highlights are suppressed in PvP areas and PvP-type worlds.
+- **Events:** View Empire-wide Discord scheduled events and chapter events synchronized by the authorized Servo-Skull Discord bot. Open event posts and RSVP pages in Discord, view your confirmed Interested status, and see event countdowns.
+- **Announcements and broadcasts:** View authorized Empire communications. Officers' creation and editing capabilities depend on their verified chapter and leadership roles.
+- **Attendance:** Authorized event creators and chapter officers may independently record event attendance; the private service consolidates multiple reports for the same event, accounting for overlap. The report is an observation of nearby players rather than proof of participation.
+- **Shared ban warnings:** Authorized officers can synchronize their clan's native ban list, see chapter-scoped ban details, and receive warnings during recruitment. Reasons and Discord ban notices are optional, officer-controlled actions. Clearing a private reason does not unban the player or delete an earlier Discord post.
+- **Discord role verification:** Connect an eligible Discord account to enable role-gated features. Server-side authorization controls privileged reads and actions.
 
 ## Getting started
 
-Once the plugin is available on the RuneLite Plugin Hub, search for **Holy Empire** and install it. Open the Holy Empire side panel to browse members and chapters, then customize player indicators and chapter colors in the plugin settings.
+After approval, install **Holy Empire** from the RuneLite Plugin Hub and open the Holy Empire sidebar. Roster membership in at least one recognized Holy Empire chapter is required for member-only features.
 
-To prevent player-identification advantages in combat, Holy Empire minimap dots, overhead names, and chapter/rank labels in right-click menus are automatically hidden in PvP areas and PvP-type worlds. Clan rosters and non-identification tools remain available.
+To join the clan, visit [discord.gg/w465](https://discord.gg/w465).
 
-Member-only features use the published Holy Empire roster to recognize your RuneScape character.
+## External services and privacy
 
-## Data and privacy
+This third-party plugin is maintained by Holy Empire, not RuneLite or Jagex. Roster, event, announcement, role-verification, and ban-list features use Holy Empire-operated services. Connecting to those services exposes your IP address and may involve your RuneScape account name, chapter, and authorized Discord identity. The publicly readable Empire events feed is not personalized; private features require authenticated sessions.
 
-The plugin obtains clan roster and ban-warning information from services operated by Holy Empire, not by RuneLite. Requests to these servers expose your IP address and may involve RuneScape account or clan information. Officer-only verification and ban synchronization features use additional Holy Empire services. Access to the private ban list is restricted to authorized officers.
+**Attendance reports transmit observed RuneScape player names, chapter affiliations, and observation times to a private Holy Empire service** when an authorized officer saves a report. Only authorized officers can access protected attendance and private ban details. Please consider this data flow before using the feature.
 
-## Join Holy Empire
+The plugin never asks for or stores your RuneScape login password. Discord sign-in occurs through Discord's authorized verification flow; server-side access is scoped to the verified role. External services can be temporarily unavailable, in which case their dependent features will be unavailable or stale.
 
-Want to become part of the Empire or find the right chapter? Visit our [Holy Empire Discord](https://discord.gg/w465).
+## Configuration and behavior
+
+Indicators can be disabled or customized under RuneLite **Settings → Holy Empire**. The plugin does not automatically recruit, ban, unban, send chat messages, or publish Discord notices; privileged actions require an authorized officer and deliberate user confirmation.
 
 ## License
 
-The plugin source is available under the [BSD 2-Clause License](LICENSE). RuneScape artwork and third-party logos remain the property of their respective owners.
+Source code is licensed under the [BSD 2-Clause License](LICENSE). RuneScape, Discord, and other third-party names, artwork, and marks remain the property of their respective owners.

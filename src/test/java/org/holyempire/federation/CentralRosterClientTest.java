@@ -7,16 +7,23 @@
 
 package org.holyempire.federation;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpServer;
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+
 import java.util.zip.GZIPOutputStream;
 import okhttp3.OkHttpClient;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class CentralRosterClientTest
@@ -159,8 +166,7 @@ public class CentralRosterClientTest
 														snapshot.members));
 	}
 
-	@Test
-	public void brokenWarningFeedDoesNotInvalidateThePublicRoster() throws Exception
+	@Test public void brokenWarningFeedDoesNotInvalidateThePublicRoster() throws Exception
 	{
 		addWarningFixture("Outside");
 		warningCompressed[warningCompressed.length - 1] ^= 1;
@@ -170,8 +176,7 @@ public class CentralRosterClientTest
 		assertTrue(snapshot.eligible("test0"));
 	}
 
-	@Test
-	public void fetchesAllGroupsFromOneManifest() throws Exception
+	@Test public void fetchesAllGroupsFromOneManifest() throws Exception
 	{
 		WomDirectoryClient.Snapshot snapshot =
 			CentralRosterClient.fetch(base(), new OkHttpClient());
@@ -181,8 +186,7 @@ public class CentralRosterClientTest
 		assertEquals(now * 1000, snapshot.sourceTimestampMs);
 	}
 
-	@Test
-	public void checksumMismatchRejectsSnapshot() throws Exception
+	@Test public void checksumMismatchRejectsSnapshot() throws Exception
 	{
 		compressed[compressed.length - 1] ^= 1;
 		try
@@ -196,8 +200,7 @@ public class CentralRosterClientTest
 		}
 	}
 
-	@Test
-	public void oldManifestIsRejected() throws Exception
+	@Test public void oldManifestIsRejected() throws Exception
 	{
 		makeFixture(now - 2 * 24 * 3600, WomDirectoryClient.GROUPS.length);
 		try
@@ -211,8 +214,7 @@ public class CentralRosterClientTest
 		}
 	}
 
-	@Test
-	public void incompleteRosterIsRejected() throws Exception
+	@Test public void incompleteRosterIsRejected() throws Exception
 	{
 		makeFixture(now, 15);
 		try
@@ -226,8 +228,7 @@ public class CentralRosterClientTest
 		}
 	}
 
-	@Test
-	public void nonlocalHttpIsRejected() throws Exception
+	@Test public void nonlocalHttpIsRejected() throws Exception
 	{
 		try
 		{
@@ -240,8 +241,7 @@ public class CentralRosterClientTest
 		}
 	}
 
-	@Test
-	public void invalidBaseCredentialsAreRejected() throws Exception
+	@Test public void invalidBaseCredentialsAreRejected() throws Exception
 	{
 		try
 		{

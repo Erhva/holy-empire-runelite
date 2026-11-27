@@ -7,7 +7,7 @@
 
 package org.holyempire.federation;
 
-/** The core game minimap's special categories outrank additional Federation dots. */
+/** Native minimap markers win unless the user expressly elevates Empire dots. */
 final class FederationDotPriority
 {
 	private FederationDotPriority()
@@ -17,7 +17,18 @@ final class FederationDotPriority
 	static boolean allowFederationDot(boolean isFriend, boolean friendsChat, boolean clanMember,
 									  int localTeam, int playerTeam)
 	{
-		return !isFriend && !friendsChat && !clanMember &&
-			(localTeam == 0 || localTeam != playerTeam);
+		return allowFederationDot(isFriend, friendsChat, clanMember, localTeam, playerTeam,
+								  EmpireHighlightPriority.BELOW_CLAN);
+	}
+
+	static boolean allowFederationDot(boolean isFriend, boolean friendsChat, boolean clanMember,
+									  int localTeam, int playerTeam,
+									  EmpireHighlightPriority selected)
+	{
+		EmpireHighlightPriority priority = EmpireHighlightPriority.selected(selected);
+		return (!isFriend || priority.outranksNativeFriendDot()) &&
+			(!friendsChat || priority.outranksNativeFriendsChatDot()) &&
+			(!clanMember || priority.outranksNativeClanDot()) &&
+			(localTeam == 0 || localTeam != playerTeam || priority.outranksNativeTeamDot());
 	}
 }

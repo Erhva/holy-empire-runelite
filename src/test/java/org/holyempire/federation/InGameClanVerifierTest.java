@@ -53,8 +53,7 @@ public class InGameClanVerifierTest
 			});
 	}
 
-	@Test
-	public void allSixteenWomChapterNamesAndClanChatNamesResolve()
+	@Test public void allSixteenWomChapterNamesAndClanChatNamesResolve()
 	{
 		assertEquals(16, WomDirectoryClient.CLANS.length);
 		for (int i = 0; i < WomDirectoryClient.CLANS.length; i++)
@@ -68,8 +67,7 @@ public class InGameClanVerifierTest
 		assertEquals("", InGameClanVerifier.recognizedChapter(null));
 	}
 
-	@Test
-	public void requiresAccountInTheActualPrimaryClanMembers()
+	@Test public void requiresAccountInTheActualPrimaryClanMembers()
 	{
 		assertEquals("Holy Empire", InGameClanVerifier.chapterFor(
 										settings("Holy Empire", true, "Alpha", "Beta"), "alpha"));
@@ -80,8 +78,7 @@ public class InGameClanVerifierTest
 		assertEquals("", InGameClanVerifier.chapterFor(null, "alpha"));
 	}
 
-	@Test
-	public void fullRosterFallbackHandlesRenamedOrWhitespaceNormalizations()
+	@Test public void fullRosterFallbackHandlesRenamedOrWhitespaceNormalizations()
 	{
 		assertEquals("Holy Chaos", InGameClanVerifier.chapterFor(
 									   settings("Holy Chaos", false, "Other", "Alpha\u00a0Name"),
@@ -90,8 +87,7 @@ public class InGameClanVerifierTest
 													   "alpha name"));
 	}
 
-	@Test
-	public void matchingChapterIsNotEquivalentToGuestPresence()
+	@Test public void matchingChapterIsNotEquivalentToGuestPresence()
 	{
 		assertEquals("", InGameClanVerifier.matchingChapter("Some Other Clan", "Alpha",
 															Collections.singletonList("Alpha")));
@@ -102,8 +98,7 @@ public class InGameClanVerifierTest
 		assertEquals("", InGameClanVerifier.matchingChapter("Holy Empire", "Alpha", null));
 	}
 
-	@Test
-	public void unavailableIndexedLookupFallsBackToNativeRoster()
+	@Test public void unavailableIndexedLookupFallsBackToNativeRoster()
 	{
 		final List<ClanMember> members = Collections.singletonList(member("Alpha"));
 		ClanSettings unavailableIndex = (ClanSettings)Proxy.newProxyInstance(
@@ -126,8 +121,7 @@ public class InGameClanVerifierTest
 		assertEquals("Holy Empire", InGameClanVerifier.chapterFor(unavailableIndex, "alpha"));
 	}
 
-	@Test
-	public void unavailableNativeMemberListFailsClosed()
+	@Test public void unavailableNativeMemberListFailsClosed()
 	{
 		ClanSettings unavailable = (ClanSettings)Proxy.newProxyInstance(
 			ClanSettings.class.getClassLoader(), new Class[] {ClanSettings.class},

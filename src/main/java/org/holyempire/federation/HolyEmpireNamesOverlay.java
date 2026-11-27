@@ -19,9 +19,10 @@ import net.runelite.api.Point;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.party.PartyService;
-import net.runelite.client.plugins.playerindicators.PlayerIndicatorsConfig.HighlightSetting;
 import net.runelite.client.plugins.playerindicators.PlayerIndicatorsConfig;
-import net.runelite.client.ui.overlay.*;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.OverlayUtil;
 
 public class HolyEmpireNamesOverlay extends Overlay
 {
@@ -41,13 +42,9 @@ public class HolyEmpireNamesOverlay extends Overlay
 		this.party = party;
 		this.indicators = manager.getConfig(PlayerIndicatorsConfig.class);
 		setPosition(OverlayPosition.DYNAMIC);
-		// Player Indicators draws at MED. Higher priority paints our color over 'Highlight others'.
+		// Player Indicators draws at MED. Rendering last allows a selected
+		// Empire priority to take visual precedence where configured.
 		setPriority(PRIORITY_HIGH);
-	}
-
-	private static boolean enabled(HighlightSetting setting, boolean inPvp)
-	{
-		return setting == HighlightSetting.ENABLED || (setting == HighlightSetting.PVP && inPvp);
 	}
 
 	@Override public Dimension render(Graphics2D graphics)
@@ -71,7 +68,7 @@ public class HolyEmpireNamesOverlay extends Overlay
 		int team = local.getTeam();
 		List<String> localChapters = roster.getOrDefault(
 			WomDirectoryClient.normalize(local.getName()), Collections.emptyList());
-		for (Player player : client.getPlayers())
+		for (Player player : client.getTopLevelWorldView().players())
 		{
 			if (player == null || player == local || player.getName() == null)
 			{
@@ -90,14 +87,8 @@ public class HolyEmpireNamesOverlay extends Overlay
 			}
 			boolean inParty =
 				party.isInParty() && party.getMemberByDisplayName(player.getName()) != null;
-			if (!HolyEmpireOverheadPriority.mayDraw(
-					inParty && enabled(indicators.highlightPartyMembers(), inPvp),
-					player.isFriend() && enabled(indicators.highlightFriends(), inPvp),
-					player.isFriendsChatMember() &&
-						enabled(indicators.highlightFriendsChat(), inPvp),
-					team != 0 && player.getTeam() == team &&
-						enabled(indicators.highlightTeamMembers(), inPvp),
-					player.isClanMember() && enabled(indicators.highlightClanMembers(), inPvp)))
+			if (!EmpireHighlightPriority.canHighlight(config.empireHighlightPriority(), player,
+													  team, inParty, indicators, inPvp))
 			{
 				continue;
 			}

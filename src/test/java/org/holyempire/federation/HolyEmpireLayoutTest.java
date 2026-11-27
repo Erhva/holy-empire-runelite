@@ -42,8 +42,7 @@ public class HolyEmpireLayoutTest
 		return null;
 	}
 
-	@Test
-	public void spacingAndHeaderHeightDoNotUseTallChapterDetailCard() throws Exception
+	@Test public void spacingAndHeaderHeightDoNotUseTallChapterDetailCard() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -84,7 +83,31 @@ public class HolyEmpireLayoutTest
 	}
 
 	@Test
-	public void loadingMessageIsNotRepeatedInTheFooter() throws Exception
+	public void chapterCardsUseSixteenPointNamesAndFourteenPointDescriptions() throws Exception
+	{
+		final FederationPanel[] panel = new FederationPanel[1];
+		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
+		panel[0].update(Collections.singletonMap("alpha", Collections.singletonList("Holy Empire")),
+						Collections.emptyMap());
+		SwingUtilities.invokeAndWait(() -> {});
+		SwingUtilities.invokeAndWait(() -> {
+			JButton card = (JButton)named(panel[0], "holyEmpireChapter:Holy Empire");
+			assertNotNull(card);
+			JLabel name = (JLabel)named(card, "holyEmpireChapterTitle:Holy Empire");
+			JLabel description = (JLabel)named(card, "holyEmpireChapterDescription:Holy Empire");
+			assertNotNull(name);
+			assertNotNull(description);
+			assertEquals(16f, name.getFont().getSize2D(), 0f);
+			JLabel banner = (JLabel)named(panel[0], "holyEmpireHeader");
+			assertNotNull(banner);
+			assertEquals("Holy Empire banner is now 20pt", 20f, banner.getFont().getSize2D(), 0f);
+			assertTrue(banner.getFont().isBold());
+			assertTrue(name.getFont().isBold());
+			assertEquals(14f, description.getFont().getSize2D(), 0f);
+		});
+	}
+
+	@Test public void loadingMessageIsNotRepeatedInTheFooter() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
@@ -110,8 +133,7 @@ public class HolyEmpireLayoutTest
 		});
 	}
 
-	@Test
-	public void previewAndRealDenialShareNewCenteredJoinScreen() throws Exception
+	@Test public void previewAndRealDenialShareNewCenteredJoinScreen() throws Exception
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());

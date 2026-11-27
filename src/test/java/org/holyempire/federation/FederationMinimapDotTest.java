@@ -15,8 +15,7 @@ import static org.junit.Assert.*;
 
 public class FederationMinimapDotTest
 {
-	@Test
-	public void usesNativeFourByFivePixelSilhouette()
+	@Test public void usesNativeFourByFivePixelSilhouette()
 	{
 		BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = image.createGraphics();
@@ -51,8 +50,7 @@ public class FederationMinimapDotTest
 		}
 	}
 
-	@Test
-	public void supportsIndependentColor()
+	@Test public void supportsIndependentColor()
 	{
 		BufferedImage image = new BufferedImage(12, 12, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = image.createGraphics();
@@ -68,8 +66,7 @@ public class FederationMinimapDotTest
 		assertEquals(0, image.getRGB(0, 0));
 	}
 
-	@Test
-	public void nullColorDoesNotDraw()
+	@Test public void nullColorDoesNotDraw()
 	{
 		BufferedImage image = new BufferedImage(12, 12, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = image.createGraphics();

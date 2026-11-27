@@ -28,12 +28,13 @@ final class InGameClanVerifier
 		{
 			return "";
 		}
-		for (int i = 0; i < WomDirectoryClient.CLANS.length; i++)
+		for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
 		{
-			if (target.equals(WomDirectoryClient.normalize(WomDirectoryClient.CLANS[i])) ||
-				target.equals(WomDirectoryClient.normalize(WomDirectoryClient.CLAN_CHATS[i])))
+			if (chapter.hasWomRoster() &&
+				(target.equals(WomDirectoryClient.normalize(chapter.name)) ||
+				 target.equals(WomDirectoryClient.normalize(chapter.clanChat))))
 			{
-				return WomDirectoryClient.CLANS[i];
+				return chapter.name;
 			}
 		}
 		return "";

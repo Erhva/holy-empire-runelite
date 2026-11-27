@@ -36,6 +36,7 @@ public class FederationBanWidgetCaptureTest
 			case "getChildren":
 				return children;
 			case "isHidden":
+			case "isSelfHidden":
 				return hidden;
 			case "toString":
 				return "test-widget";
@@ -83,8 +84,7 @@ public class FederationBanWidgetCaptureTest
 		}
 	}
 
-	@Test
-	public void readsOnlyCorrectOpenBansScreenAndUsesGameClanName()
+	@Test public void readsOnlyCorrectOpenBansScreenAndUsesGameClanName()
 	{
 		Widget visible = widget(null, false, null);
 		Widget bans =
@@ -100,8 +100,24 @@ public class FederationBanWidgetCaptureTest
 		assertEquals("LIVE_WIDGET", result.source);
 	}
 
-	@Test
-	public void sparseBanListWidgetCanContainHundredsOfUnusedSlots()
+	@Test public void hiddenDynamicRowsAfterUnbanAreNotCaptured()
+	{
+		Widget page = widget(null, false, null);
+		Widget container = widget(null, false,
+			new Widget[] {
+				widget("Still Banned", false, null),
+				widget("Removed Ban", true, null),
+				widget("Another Ban", false, null),
+				widget("", true, null)
+			});
+		FederationBanRegistry.Snapshot snapshot =
+			FederationBanWidgetCapture.read(client("Holy Guard",page,container,true),WHEN);
+		assertEquals(2,snapshot.names.size());
+		assertEquals("Still Banned",snapshot.names.get(0));
+		assertEquals("Another Ban",snapshot.names.get(1));
+	}
+
+	@Test public void sparseBanListWidgetCanContainHundredsOfUnusedSlots()
 	{
 		Widget visible = widget(null, false, null);
 		Widget[] sparse = new Widget[1200];
@@ -117,8 +133,7 @@ public class FederationBanWidgetCaptureTest
 		assertEquals("Fahern Yama", snapshot.names.get(2));
 	}
 
-	@Test
-	public void sparseArrayCapacityDoesNotBypassActualHundredBanLimit()
+	@Test public void sparseArrayCapacityDoesNotBypassActualHundredBanLimit()
 	{
 		Widget visible = widget(null, false, null);
 		Widget[] slots = new Widget[1800];
@@ -130,8 +145,7 @@ public class FederationBanWidgetCaptureTest
 					 "Unexpected number");
 	}
 
-	@Test
-	public void extremeArrayCapacityIsRejectedWithoutExtracting()
+	@Test public void extremeArrayCapacityIsRejectedWithoutExtracting()
 	{
 		Widget visible = widget(null, false, null);
 		Widget[] massive = new Widget[16385];
@@ -140,8 +154,7 @@ public class FederationBanWidgetCaptureTest
 					 "safe inspection limit");
 	}
 
-	@Test
-	public void ignoresOffscreenOrUnknownClanInsteadOfClaimingBans()
+	@Test public void ignoresOffscreenOrUnknownClanInsteadOfClaimingBans()
 	{
 		Widget parent = widget(null, false, null);
 		Widget populated = widget(null, false, new Widget[] {widget("A Player", false, null)});
@@ -150,10 +163,15 @@ public class FederationBanWidgetCaptureTest
 		shouldReject(client("Holy Empire", widget(null, true, null), populated, true), "Open your");
 		shouldReject(client("Holy Empire", parent, null, true), "Open your");
 		shouldReject(client("Holy Empire", parent, populated, false), "Log into");
-		shouldReject(client("Holy Empire", parent, widget(null, false, null), true),
-					 "not populated");
-		shouldReject(client("Holy Empire", parent,
-							widget(null, false, new Widget[] {widget("", false, null)}), true),
-					 "No banned");
+		assertEquals(0,
+					 FederationBanWidgetCapture
+						 .read(client("Holy Empire", parent, widget(null, false, null), true), WHEN)
+						 .names.size());
+		assertEquals(
+			0, FederationBanWidgetCapture
+				   .read(client("Holy Empire", parent,
+								widget(null, false, new Widget[] {widget("", false, null)}), true),
+						 WHEN)
+				   .names.size());
 	}
 }

@@ -141,8 +141,7 @@ public class FederationInGameBanSyncButtonTest
 		});
 	}
 
-	@Test
-	public void onlyDeputyOwnerAndOwnerCanUseBansSync()
+	@Test public void onlyDeputyOwnerAndOwnerCanUseBansSync()
 	{
 		WidgetState w = new WidgetState();
 		assertFalse(FederationInGameBanSyncButton.isOwnerOrDeputy(
@@ -159,8 +158,7 @@ public class FederationInGameBanSyncButtonTest
 			client("Holy Chaos", ClanRank.OWNER, w, false)));
 	}
 
-	@Test
-	public void administratorCannotCreateButtonOrRequestSync()
+	@Test public void administratorCannotCreateButtonOrRequestSync()
 	{
 		AtomicInteger calls = new AtomicInteger();
 		WidgetState w = new WidgetState();
@@ -177,8 +175,7 @@ public class FederationInGameBanSyncButtonTest
 		assertEquals(0, calls.get());
 	}
 
-	@Test
-	public void singleButtonDoesNotMultiplyOrTriggerWithoutClick()
+	@Test public void singleButtonDoesNotMultiplyOrTriggerWithoutClick()
 	{
 		AtomicInteger syncCalls = new AtomicInteger();
 		WidgetState w = new WidgetState();
@@ -201,8 +198,7 @@ public class FederationInGameBanSyncButtonTest
 		assertTrue(displayed.isHidden());
 	}
 
-	@Test
-	public void uploadPayloadHasOnlyChapterAndCapturedNamesAndNoTokens()
+	@Test public void uploadPayloadHasOnlyChapterAndCapturedNamesAndNoTokens()
 	{
 		FederationBanRegistry.Snapshot capture = new FederationBanRegistry.Snapshot(
 			"Holy Chaos", "2026-11-16T18:00:00Z", "LIVE_WIDGET",

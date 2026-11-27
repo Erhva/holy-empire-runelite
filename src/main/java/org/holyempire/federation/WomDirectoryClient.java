@@ -7,10 +7,22 @@
 
 package org.holyempire.federation;
 
-import com.google.gson.*;
-import java.io.*;
-import java.util.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import net.runelite.client.util.Filepath;
+import net.runelite.client.util.Text;
 import okhttp3.OkHttpClient;
 
 final class WomDirectoryClient
@@ -39,19 +51,6 @@ final class WomDirectoryClient
 	{
 		return lastResultStale;
 	}
-
-	static final class RateLimited extends IOException
-	{
-		final long retryMillis;
-
-		RateLimited(int group, long retryMillis)
-		{
-			super("WOM group " + group + " returned HTTP 429");
-			this.retryMillis = retryMillis;
-		}
-	}
-
-	static final int LIMIT = 2097152;
 
 	static final class ChapterMember
 	{
@@ -107,6 +106,7 @@ final class WomDirectoryClient
 		final long sourceTimestampMs;
 		final Set<String> publicBanHashes;
 		final boolean publicBanStatusAvailable;
+		final ChapterDirectory directory;
 
 		Snapshot(Map<String, List<String>> members)
 		{
@@ -128,11 +128,20 @@ final class WomDirectoryClient
 				 long sourceTimestampMs, Set<String> publicBanHashes,
 				 boolean publicBanStatusAvailable)
 		{
+			this(members, chapters, sourceTimestampMs, publicBanHashes, publicBanStatusAvailable,
+				 ChapterDirectory.legacy());
+		}
+
+		Snapshot(Map<String, List<String>> members, Map<String, List<ChapterMember>> chapters,
+				 long sourceTimestampMs, Set<String> publicBanHashes,
+				 boolean publicBanStatusAvailable, ChapterDirectory directory)
+		{
 			this.members = members;
 			this.chapters = chapters;
 			this.sourceTimestampMs = sourceTimestampMs;
 			this.publicBanHashes = Collections.unmodifiableSet(new HashSet<>(publicBanHashes));
 			this.publicBanStatusAvailable = publicBanStatusAvailable;
+			this.directory = directory;
 		}
 
 		boolean eligible(String account)
@@ -143,9 +152,19 @@ final class WomDirectoryClient
 
 	static String normalize(String value)
 	{
-		return value == null
-			? ""
-			: value.replace('\u00a0', ' ').trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+		if (value == null)
+		{
+			return "";
+		}
+		String plain = value.replace('\u00a0', ' ');
+		// RuneLite converts Jagex separators and strips non-ASCII. Never let
+		// that stripping turn an invalid identity into a different account.
+		if (plain.matches("[A-Za-z0-9 _-]*"))
+		{
+			return Text.toJagexName(plain).toLowerCase(Locale.ROOT).replaceAll(" +", " ");
+		}
+		return plain;
+
 	}
 
 	static void mergeGroup(JsonObject body, int index, Map<String, Set<String>> combined)
@@ -157,16 +176,24 @@ final class WomDirectoryClient
 	static void mergeGroup(JsonObject body, int index, Map<String, Set<String>> combined,
 						   Map<String, List<ChapterMember>> chapters) throws IOException
 	{
-		if (!body.has("id") || body.get("id").getAsInt() != GROUPS[index])
+		mergeGroup(body, GROUPS[index], CLANS[index], combined, chapters);
+	}
+
+	static void mergeGroup(JsonObject body, int groupId, String chapterName,
+						   Map<String, Set<String>> combined,
+						   Map<String, List<ChapterMember>> chapters) throws IOException
+	{
+		if (!body.has("id") || body.get("id").getAsInt() != groupId)
 		{
 			throw new IOException("WOM group identity mismatch");
 		}
 		JsonArray list = body.getAsJsonArray("memberships");
-		if (list == null || list.size() == 0 || list.size() > 2000)
+		if (list == null || list.size() > 2000)
 		{
 			throw new IOException("Invalid WOM roster");
 		}
 		List<ChapterMember> chapter = new ArrayList<>();
+		Set<String> seen = new HashSet<>();
 		for (JsonElement item : list)
 		{
 			JsonObject membership = item.getAsJsonObject();
@@ -179,11 +206,11 @@ final class WomDirectoryClient
 							  ? player.get("displayName").getAsString()
 							  : player.get("username").getAsString();
 			String key = normalize(name);
-			if (!key.matches("[a-z0-9 _-]{1,12}"))
+			if (!key.matches("[a-z0-9 ]{1,12}") || !seen.add(key))
 			{
 				throw new IOException("Invalid RuneScape name");
 			}
-			combined.computeIfAbsent(key, k -> new TreeSet<>()).add(CLANS[index]);
+			combined.computeIfAbsent(key, k -> new TreeSet<>()).add(chapterName);
 			String rank = membership.has("role") && !membership.get("role").isJsonNull()
 							  ? membership.get("role").getAsString()
 							  : "unranked";
@@ -195,7 +222,7 @@ final class WomDirectoryClient
 											 -> HolyEmpireRankDisplay.isEmperor(m.name) ? 0
 												: m.rank.equalsIgnoreCase("owner")		? 1
 																						: 2));
-		chapters.put(CLANS[index], Collections.unmodifiableList(chapter));
+		chapters.put(chapterName, Collections.unmodifiableList(chapter));
 	}
 
 	static Snapshot fetch(OkHttpClient http) throws Exception

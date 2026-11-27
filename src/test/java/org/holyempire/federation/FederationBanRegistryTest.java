@@ -8,7 +8,10 @@
 package org.holyempire.federation;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -36,8 +39,7 @@ public class FederationBanRegistryTest
 		}
 	}
 
-	@Test
-	public void capturesAndMatchesExactNormalizedNamesNotSubstrings()
+	@Test public void capturesAndMatchesExactNormalizedNamesNotSubstrings()
 	{
 		FederationBanRegistry store = new FederationBanRegistry();
 		FederationBanRegistry.Snapshot one =
@@ -57,8 +59,7 @@ public class FederationBanRegistryTest
 		assertTrue(store.matches(null).isEmpty());
 	}
 
-	@Test
-	public void widgetCaptureRejectsUnknownAndEmptyWithoutOverwriting()
+	@Test public void widgetCaptureRejectsUnknownOrMalformedWithoutOverwriting()
 	{
 		FederationBanRegistry store = new FederationBanRegistry();
 		store.put(sample("Holy Empire", "FirstUser"));
@@ -81,8 +82,22 @@ public class FederationBanRegistryTest
 		assertNull(FederationBanRegistry.validName("\\nLine"));
 	}
 
-	@Test
-	public void exportImportRetainsChapterMetadataAndRejectsPartialUpdates()
+	@Test public void explicitEmptyBanCaptureReplacesExistingSnapshot()
+	{
+		FederationBanRegistry store = new FederationBanRegistry();
+		store.put(sample("Holy Empire", "Old Ban"));
+		FederationBanRegistry.Snapshot empty = sample("Holy Empire");
+		assertEquals(0, empty.names.size());
+		store.put(empty);
+		assertEquals(0, store.total());
+		assertEquals(1, store.chapterCount());
+		assertTrue(store.matches("Old Ban").isEmpty());
+		assertTrue(FederationBanRegistry
+					   .fromVisibleWidget("Holy Empire", Arrays.asList("", "", "  "), TIME)
+					   .names.isEmpty());
+	}
+
+	@Test public void exportImportRetainsChapterMetadataAndRejectsPartialUpdates()
 	{
 		FederationBanRegistry original = new FederationBanRegistry();
 		original.put(sample("Holy Empire", "Banned One", "Banned Two"));
@@ -114,37 +129,7 @@ public class FederationBanRegistryTest
 		assertEquals(previous, other.toCsv());
 	}
 
-	@Test
-	public void toolsShowWarningAndCaptureOnlyOnExplicitClick() throws Exception
-	{
-		FederationBanRegistry registry = new FederationBanRegistry();
-		final boolean[] invoked = {false};
-		FederationBanToolsPanel[] panel = {null};
-		SwingUtilities.invokeAndWait(() -> {
-			panel[0] = new FederationBanToolsPanel(registry, (success, failed) -> {
-				invoked[0] = true;
-				success.accept(sample("Holy Heart", "Candidate"));
-			});
-			assertFalse(invoked[0]);
-			JTextField input = (JTextField)find(panel[0], "holyEmpireBanCandidate");
-			assertNotNull(input);
-			input.setText("Candidate");
-			JTextArea warning = (JTextArea)find(panel[0], "holyEmpireBanWarning");
-			assertTrue(warning.getText().contains("No match"));
-			panel[0].capture();
-		});
-		SwingUtilities.invokeAndWait(() -> {});
-		SwingUtilities.invokeAndWait(() -> {
-			assertTrue(invoked[0]);
-			assertEquals(1, registry.total());
-			JTextArea warning = (JTextArea)find(panel[0], "holyEmpireBanWarning");
-			assertTrue(warning.getText().contains("WARNING"));
-			assertTrue(warning.getText().contains("Holy Heart"));
-		});
-	}
-
-	@Test
-	public void globalSearchShowsWarningOnlyForExactBanMatches() throws Exception
+	@Test public void globalSearchShowsWarningOnlyForExactBanMatches() throws Exception
 	{
 		FederationPanel[] p = {null};
 		SwingUtilities.invokeAndWait(() -> p[0] = new FederationPanel());

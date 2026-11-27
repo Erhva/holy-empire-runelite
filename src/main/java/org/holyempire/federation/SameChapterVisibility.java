@@ -41,14 +41,26 @@ final class SameChapterVisibility
 		return false;
 	}
 
-	static boolean showRankIcon(boolean enabled, boolean sameChapter)
+	/**
+	 * Other chapters follow the global rank toggle. Our chapter gets its own,
+	 * but must not supersede an existing Player Indicators icon.
+	 */
+	static boolean showRankIcon(boolean globalEnabled, boolean sameChapter,
+								boolean sameChapterEnabled,
+								boolean playerIndicatorsClanRanksEnabled,
+								boolean nativeRankIconPresent)
 	{
-		return enabled && !sameChapter;
+		// Player Indicators' global clan rank setting takes priority for
+		// same-chapter players, as does any native rank icon it rendered.
+		return sameChapter
+			? sameChapterEnabled && playerIndicatorsClanRanksEnabled && !nativeRankIconPresent
+			: globalEnabled;
 	}
 
-	static boolean showMenuTag(boolean enabled, boolean sameChapter, boolean allowSame)
+	/** Same-chapter CC visibility is independent of the Empire-wide CC setting. */
+	static boolean showMenuTag(boolean globalEnabled, boolean sameChapter, boolean showSame)
 	{
-		return enabled && (!sameChapter || allowSame);
+		return sameChapter ? showSame : globalEnabled;
 	}
 
 	static boolean showOverhead(boolean enabled, boolean sameChapter, boolean allowSame)

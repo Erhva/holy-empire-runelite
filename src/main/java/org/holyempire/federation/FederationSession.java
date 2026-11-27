@@ -75,6 +75,7 @@ final class FederationSession
 		{
 			return false;
 		}
+		HolyEmpireChapterCatalog.update(data.directory);
 		List<String> chaptersForAccount = data.members.get(account);
 		eligible = chaptersForAccount != null && !chaptersForAccount.isEmpty();
 		roster = eligible ? data.members : Collections.emptyMap();

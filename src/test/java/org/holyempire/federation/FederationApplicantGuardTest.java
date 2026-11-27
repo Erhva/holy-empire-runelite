@@ -36,8 +36,7 @@ public class FederationApplicantGuardTest
 			chapters);
 	}
 
-	@Test
-	public void detectsNativeApplicantsAcceptAndNotOtherAcceptButtons()
+	@Test public void detectsNativeApplicantsAcceptAndNotOtherAcceptButtons()
 	{
 		assertTrue(FederationApplicantGuard.isApplicantAcceptance("Accept", ACCEPT, 0));
 		assertTrue(FederationApplicantGuard.isApplicantAcceptance("Select", 0, ACCEPT));
@@ -52,8 +51,7 @@ public class FederationApplicantGuardTest
 			"Accept", InterfaceID.ClansApplicants.ACCEPT + 65536, 0));
 	}
 
-	@Test
-	public void matchesOnlySelectedDetailsNotUnrelatedApplicants()
+	@Test public void matchesOnlySelectedDetailsNotUnrelatedApplicants()
 	{
 		assertEquals("Harohad",
 					 FederationApplicantGuard.matchedBannedApplicant(
@@ -75,8 +73,7 @@ public class FederationApplicantGuardTest
 					   directory(), Arrays.asList("Harohad", "Banned One")));
 	}
 
-	@Test
-	public void clearKnownBannedAndUnknownStatusAreDistinguished()
+	@Test public void clearKnownBannedAndUnknownStatusAreDistinguished()
 	{
 		FederationBanDirectoryClient.Snapshot approved = directory();
 		assertEquals(FederationApplicantGuard.Status.BANNED,
@@ -96,8 +93,7 @@ public class FederationApplicantGuardTest
 			FederationApplicantGuard.status(approved, Arrays.asList("Harohad", "Safe Player")));
 	}
 
-	@Test
-	public void onlyConfirmedBanCancelsApplicantsAccept()
+	@Test public void onlyConfirmedBanCancelsApplicantsAccept()
 	{
 		assertTrue(
 			FederationApplicantGuard.shouldCancelAccept(FederationApplicantGuard.Status.BANNED));
@@ -109,8 +105,7 @@ public class FederationApplicantGuardTest
 						FederationApplicantGuard.Status.UNVERIFIED));
 	}
 
-	@Test
-	public void emptyApplicantsScreenDoesNotWarnOrBlock()
+	@Test public void emptyApplicantsScreenDoesNotWarnOrBlock()
 	{
 		FederationBanDirectoryClient.Snapshot approved = directory();
 		List<String> emptyScreen = Arrays.asList("Choose an applicant", "---", "Skill total: ---",
@@ -128,8 +123,7 @@ public class FederationApplicantGuardTest
 			approved, Collections.singletonList("Applicant: Harohad"))));
 	}
 
-	@Test
-	public void selectedNameDetectionPrefersExplicitNameNotOtherFields()
+	@Test public void selectedNameDetectionPrefersExplicitNameNotOtherFields()
 	{
 		assertEquals("Harohad",
 					 FederationApplicantGuard.selectedApplicantName(Arrays.asList(
@@ -150,8 +144,7 @@ public class FederationApplicantGuardTest
 			FederationApplicantGuard.selectedApplicantName(Collections.singletonList("Accept")));
 	}
 
-	@Test
-	public void warnsWithoutLeakingPrivateNamesWhenSelectedNameUnknown()
+	@Test public void warnsWithoutLeakingPrivateNamesWhenSelectedNameUnknown()
 	{
 		String generic = FederationApplicantGuard.unverifiedWarning();
 		assertTrue(generic.contains("not been verified"));

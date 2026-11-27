@@ -9,7 +9,11 @@ package org.holyempire.federation;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.runelite.client.util.Filepath;
 import org.junit.Rule;
@@ -36,8 +40,7 @@ public class WomSnapshotCacheTest
 		return new WomDirectoryClient.Snapshot(members, chapters);
 	}
 
-	@Test
-	public void loginAgainUsesSnapshotWithoutNetwork() throws Exception
+	@Test public void loginAgainUsesSnapshotWithoutNetwork() throws Exception
 	{
 		Filepath path =
 			Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
@@ -57,8 +60,7 @@ public class WomSnapshotCacheTest
 		assertEquals(1, requests.get());
 	}
 
-	@Test
-	public void equipmentRefreshBypassesFreshCacheWithoutContactingWom() throws Exception
+	@Test public void equipmentRefreshBypassesFreshCacheWithoutContactingWom() throws Exception
 	{
 		Filepath path = Filepath.Unchecked.getRooted(folder.getRoot().toPath())
 							.joinSegment("vexillum-cache.json");
@@ -82,8 +84,7 @@ public class WomSnapshotCacheTest
 		assertEquals("Vexillum forces one CDN refresh despite fresh local cache", 2, fetches.get());
 	}
 
-	@Test
-	public void restartReusesFreshDiskCache() throws Exception
+	@Test public void restartReusesFreshDiskCache() throws Exception
 	{
 		Filepath path =
 			Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
@@ -102,8 +103,7 @@ public class WomSnapshotCacheTest
 				: "missing");
 	}
 
-	@Test
-	public void cachedNonmemberWarningHashesSurviveRestart() throws Exception
+	@Test public void cachedNonmemberWarningHashesSurviveRestart() throws Exception
 	{
 		Filepath path = Filepath.Unchecked.getRooted(folder.getRoot().toPath())
 							.joinSegment("wom-warning-cache.json");
@@ -122,8 +122,7 @@ public class WomSnapshotCacheTest
 			"Non Member", restored.snapshot.publicBanHashes, restored.snapshot.members));
 	}
 
-	@Test
-	public void failedRefreshRetainsOldPublicRosterAndBacksOff() throws Exception
+	@Test public void failedRefreshRetainsOldPublicRosterAndBacksOff() throws Exception
 	{
 		Filepath path =
 			Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
@@ -146,35 +145,7 @@ public class WomSnapshotCacheTest
 		assertEquals(1, attempts.get());
 	}
 
-	@Test
-	public void honorsLongRetryAfterOnRateLimit() throws Exception
-	{
-		Filepath path =
-			Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
-		long now = 1_800_000_000_000L;
-		WomSnapshotCache cache = new WomSnapshotCache();
-		cache.get(now, path, this::fullSnapshot);
-		AtomicInteger attempts = new AtomicInteger();
-		long expiry = now + WomSnapshotCache.FRESH_MS + 10;
-		assertTrue(cache
-					   .get(expiry, path,
-							() -> {
-								attempts.incrementAndGet();
-								throw new WomDirectoryClient.RateLimited(4586, 60L * 60 * 1000);
-							})
-					   .stale);
-		assertTrue(cache
-					   .get(expiry + 20L * 60 * 1000, path,
-							() -> {
-								attempts.incrementAndGet();
-								throw new IOException("Retry-After still active");
-							})
-					   .stale);
-		assertEquals(1, attempts.get());
-	}
-
-	@Test
-	public void excessiveStalenessIsNotAccepted() throws Exception
+	@Test public void excessiveStalenessIsNotAccepted() throws Exception
 	{
 		Filepath path =
 			Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");
@@ -192,8 +163,7 @@ public class WomSnapshotCacheTest
 		}
 	}
 
-	@Test
-	public void symlinkCacheCannotReadOutsidePluginDirectory() throws Exception
+	@Test public void symlinkCacheCannotReadOutsidePluginDirectory() throws Exception
 	{
 		Path outer = folder.getRoot().toPath();
 		Path isolated = folder.newFolder("private-cache").toPath();
@@ -212,8 +182,7 @@ public class WomSnapshotCacheTest
 		assertTrue(result.snapshot.eligible("test0"));
 	}
 
-	@Test
-	public void corruptCacheIsIgnored() throws Exception
+	@Test public void corruptCacheIsIgnored() throws Exception
 	{
 		Filepath path =
 			Filepath.Unchecked.getRooted(folder.getRoot().toPath()).joinSegment("wom-cache.json");

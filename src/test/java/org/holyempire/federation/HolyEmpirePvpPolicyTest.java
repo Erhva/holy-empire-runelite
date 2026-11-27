@@ -72,7 +72,7 @@ public class HolyEmpirePvpPolicyTest
 	{
 		Client wilderness = client(1, 0, EnumSet.of(WorldType.MEMBERS));
 		FederationMinimapOverlay overlay =
-			new FederationMinimapOverlay(wilderness, null, new FederationConfig() {});
+			new FederationMinimapOverlay(wilderness, null, new FederationConfig() {}, null, null);
 		assertNull(overlay.render(null));
 	}
 

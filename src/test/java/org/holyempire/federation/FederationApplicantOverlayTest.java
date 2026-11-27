@@ -58,8 +58,7 @@ public class FederationApplicantOverlayTest
 			chapters);
 	}
 
-	@Test
-	public void drawsBannedApplicantMarkerBeforeAnyAcceptClick()
+	@Test public void drawsBannedApplicantMarkerBeforeAnyAcceptClick()
 	{
 		BufferedImage canvas = new BufferedImage(600, 280, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = canvas.createGraphics();
@@ -79,8 +78,7 @@ public class FederationApplicantOverlayTest
 					 canvas.getRGB(45, 55));
 	}
 
-	@Test
-	public void visibleBanWithoutRowCoordinatesStillRaisesWarningCount()
+	@Test public void visibleBanWithoutRowCoordinatesStillRaisesWarningCount()
 	{
 		BufferedImage canvas = new BufferedImage(250, 130, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = canvas.createGraphics();
@@ -90,8 +88,7 @@ public class FederationApplicantOverlayTest
 		graphics.dispose();
 	}
 
-	@Test
-	public void selectedWarningSitsRightOfApplicantNameNotOnSkills()
+	@Test public void selectedWarningSitsRightOfApplicantNameNotOnSkills()
 	{
 		BufferedImage canvas = new BufferedImage(1200, 850, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = canvas.createGraphics();
@@ -117,8 +114,7 @@ public class FederationApplicantOverlayTest
 		graphics.dispose();
 	}
 
-	@Test
-	public void selectedBanUsesRuneScapeBoldRedTextWithoutBackground()
+	@Test public void selectedBanUsesRuneScapeBoldRedTextWithoutBackground()
 	{
 		BufferedImage image = new BufferedImage(1200, 760, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = image.createGraphics();
@@ -157,8 +153,7 @@ public class FederationApplicantOverlayTest
 		g.dispose();
 	}
 
-	@Test
-	public void missingNameWidgetUsesTopRowFallback()
+	@Test public void missingNameWidgetUsesTopRowFallback()
 	{
 		BufferedImage canvas = new BufferedImage(1100, 750, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = canvas.createGraphics();
@@ -174,8 +169,7 @@ public class FederationApplicantOverlayTest
 		graphics.dispose();
 	}
 
-	@Test
-	public void unrelatedOrHiddenRowsCannotProduceFalseBannedMarkers()
+	@Test public void unrelatedOrHiddenRowsCannotProduceFalseBannedMarkers()
 	{
 		BufferedImage canvas = new BufferedImage(300, 200, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graphics = canvas.createGraphics();

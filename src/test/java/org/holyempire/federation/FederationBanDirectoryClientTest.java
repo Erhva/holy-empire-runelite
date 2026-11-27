@@ -14,7 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import okhttp3.OkHttpClient;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class FederationBanDirectoryClientTest
@@ -81,8 +83,7 @@ public class FederationBanDirectoryClientTest
 		}
 	}
 
-	@Test
-	public void privatePostReturnsCompleteChapterList() throws Exception
+	@Test public void privatePostReturnsCompleteChapterList() throws Exception
 	{
 		FederationBanDirectoryClient.Snapshot snapshot = get();
 		assertEquals(1, snapshot.entries.size());
@@ -99,15 +100,13 @@ public class FederationBanDirectoryClientTest
 		assertEquals(1, received.get());
 	}
 
-	@Test
-	public void noBansIsValidForSyncedEmptySet() throws Exception
+	@Test public void noBansIsValidForSyncedEmptySet() throws Exception
 	{
 		body = "{\"schema_version\":1,\"kind\":\"ban-list\",\"snapshots\":[],\"entries\":[]}";
 		assertTrue(get().entries.isEmpty());
 	}
 
-	@Test
-	public void unapprovedProductionHostCannotReceiveToken() throws Exception
+	@Test public void unapprovedProductionHostCannotReceiveToken() throws Exception
 	{
 		try
 		{
@@ -121,8 +120,7 @@ public class FederationBanDirectoryClientTest
 		assertEquals(0, received.get());
 	}
 
-	@Test
-	public void redirectsCannotForwardPrivateToken() throws Exception
+	@Test public void redirectsCannotForwardPrivateToken() throws Exception
 	{
 		responseCode = 302;
 		try
@@ -137,8 +135,7 @@ public class FederationBanDirectoryClientTest
 		assertEquals(1, received.get());
 	}
 
-	@Test
-	public void invalidResponseAndOversizedDataFailClosed() throws Exception
+	@Test public void invalidResponseAndOversizedDataFailClosed() throws Exception
 	{
 		body = "{\"schema_version\":1,\"kind\":\"ban-list\",\"snapshots\":[],"
 			   + "\"entries\":[{\"chapter\":\"Holy Chaos\",\"current_name\":\"Unapproved One\","

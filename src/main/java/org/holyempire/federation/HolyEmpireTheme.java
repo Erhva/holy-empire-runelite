@@ -32,14 +32,22 @@ final class HolyEmpireTheme
 	static final Color BLUE = new Color(152, 200, 248);
 	static final Color GOLD = new Color(205, 170, 99);
 	static final Color GOLD_EDGE = new Color(133, 111, 69);
+	static final Color SILVER = new Color(210, 216, 223);
+	static final Color SILVER_EDGE = new Color(118, 130, 146);
 	static final Color STEEL = new Color(29, 35, 44);
 	static final Color PANEL = new Color(37, 44, 55);
 	static final Color HOVER = new Color(53, 68, 86);
 	static final Color SELECTED = new Color(44, 69, 91);
+	/** Shared size for the main Holy Empire banner and chapter-card names. */
+	static final float CHAPTER_NAME_FONT_SIZE_PT = 16f;
+	static final float BANNER_TITLE_FONT_SIZE_PT = 18f;
+	static final float BANNER_SUBTITLE_FONT_SIZE_PT = 12f;
 	static final Color TEXT = new Color(235, 237, 236);
 	static final Color MUTED = new Color(175, 189, 203);
 	static final Color CRIMSON = new Color(173, 69, 76);
 	static final Color CRIMSON_EDGE = new Color(120, 60, 65);
+	static final Color RSVP_GOING_EDGE = new Color(59, 167, 98);
+	static final Color RSVP_DECLINED_EDGE = new Color(200, 76, 86);
 
 	private HolyEmpireTheme()
 	{
@@ -68,14 +76,14 @@ final class HolyEmpireTheme
 			BorderFactory.createMatteBorder(1, 1, 2, 1, restricted ? CRIMSON_EDGE : GOLD_EDGE),
 			BorderFactory.createEmptyBorder(6, 4, 6, 4)));
 		title.setForeground(HolyEmpireRankDisplay.GOLD);
-		title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
+		title.setFont(title.getFont().deriveFont(Font.BOLD, BANNER_TITLE_FONT_SIZE_PT));
 		title.setHorizontalAlignment(SwingConstants.CENTER);
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		title.setMaximumSize(new Dimension(Integer.MAX_VALUE, title.getPreferredSize().height));
 		panel.add(title);
 		JLabel motto = new JLabel(subtitle, SwingConstants.CENTER);
 		motto.setName(restricted ? "holyEmpireRestrictedSubtitle" : "holyEmpireImperialMotto");
-		motto.setFont(motto.getFont().deriveFont(Font.BOLD, 10f));
+		motto.setFont(motto.getFont().deriveFont(Font.BOLD, BANNER_SUBTITLE_FONT_SIZE_PT));
 		motto.setForeground(restricted ? new Color(222, 153, 150) : BLUE);
 		motto.setAlignmentX(Component.CENTER_ALIGNMENT);
 		motto.setMaximumSize(new Dimension(Integer.MAX_VALUE, motto.getPreferredSize().height));
@@ -107,8 +115,7 @@ final class HolyEmpireTheme
 	static JButton button(String text, boolean restricted)
 	{
 		JButton button = new JButton(text) {
-			@Override
-			protected void paintComponent(Graphics graphics)
+			@Override protected void paintComponent(Graphics graphics)
 			{
 				paintSurface(graphics, this, restricted);
 				super.paintComponent(graphics);
@@ -121,8 +128,7 @@ final class HolyEmpireTheme
 	static JToggleButton tab(String text, boolean restricted)
 	{
 		JToggleButton button = new JToggleButton(text) {
-			@Override
-			protected void paintComponent(Graphics graphics)
+			@Override protected void paintComponent(Graphics graphics)
 			{
 				paintSurface(graphics, this, restricted);
 				super.paintComponent(graphics);
@@ -160,13 +166,28 @@ final class HolyEmpireTheme
 		}
 	}
 
+	static void accentBorder(AbstractButton button, Color accent)
+	{
+		button.putClientProperty("holyEmpireAccentEdge", accent);
+		button.setBorder(buttonBorder(
+			Boolean.TRUE.equals(button.getClientProperty("holyEmpireHover")), false, accent));
+		button.repaint();
+	}
+
 	private static Border buttonBorder(boolean hover, boolean restricted)
 	{
-		return BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(hover ? GOLD
-																				 : restricted
-																					 ? CRIMSON_EDGE
-																					 : GOLD_EDGE),
-												  BorderFactory.createEmptyBorder(6, 8, 6, 8));
+		return buttonBorder(hover, restricted, null);
+	}
+
+	private static Border buttonBorder(boolean hover, boolean restricted, Color accent)
+	{
+		return BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(accent != null ? accent
+										   : hover		  ? GOLD
+										   : restricted	  ? CRIMSON_EDGE
+														  : GOLD_EDGE,
+										   accent == null ? 1 : 2),
+			BorderFactory.createEmptyBorder(6, 8, 6, 8));
 	}
 
 	private static void configure(AbstractButton button, boolean restricted)
@@ -185,16 +206,15 @@ final class HolyEmpireTheme
 			private void hover(boolean active)
 			{
 				button.putClientProperty("holyEmpireHover", active);
-				button.setBorder(buttonBorder(active, restricted));
+				button.setBorder(buttonBorder(
+					active, restricted, (Color)button.getClientProperty("holyEmpireAccentEdge")));
 				button.repaint();
 			}
-			@Override
-			public void mouseEntered(MouseEvent e)
+			@Override public void mouseEntered(MouseEvent e)
 			{
 				hover(true);
 			}
-			@Override
-			public void mouseExited(MouseEvent e)
+			@Override public void mouseExited(MouseEvent e)
 			{
 				hover(false);
 			}

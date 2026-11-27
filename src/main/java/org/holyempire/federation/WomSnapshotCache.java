@@ -7,7 +7,10 @@
 
 package org.holyempire.federation;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -16,13 +19,21 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.LinkOption;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import net.runelite.client.util.Filepath;
 
 /** Private local cache of PUBLIC WOM rosters, not an identity-verification mechanism. */
 final class WomSnapshotCache
 {
-	static final long FRESH_MS = 60L * 60 * 1000;
+	static final long FRESH_MS = 30L * 60 * 1000;
 	static final long MAX_STALE_MS = 24L * 60 * 60 * 1000;
 	static final long FAILURE_BACKOFF_MS = 10L * 60 * 1000;
 	static final int FILE_LIMIT = 5 * 1024 * 1024;
@@ -78,7 +89,7 @@ final class WomSnapshotCache
 		{
 			WomDirectoryClient.Snapshot current = fetcher.load();
 			if (current == null || current.members.isEmpty() ||
-				current.chapters.size() != WomDirectoryClient.GROUPS.length)
+				current.chapters.size() != current.directory.groupCount())
 			{
 				throw new IOException("Incomplete WOM roster snapshot");
 			}
@@ -99,11 +110,10 @@ final class WomSnapshotCache
 		}
 		catch (Exception failure)
 		{
+			// All client roster fetches use the fixed public CDN and share
+			// the same conservative retry delay. There are no client WOM
+			// API requests or WOM-specific rate-limit exceptions.
 			long delay = FAILURE_BACKOFF_MS;
-			if (failure instanceof WomDirectoryClient.RateLimited)
-			{
-				delay = Math.max(delay, ((WomDirectoryClient.RateLimited)failure).retryMillis);
-			}
 			retryAt = now + delay;
 			org.slf4j.LoggerFactory.getLogger(WomSnapshotCache.class)
 				.warn("WOM roster refresh failed; retry in at least {} seconds: {}", delay / 1000,
@@ -145,7 +155,7 @@ final class WomSnapshotCache
 			}
 			JsonObject document =
 				new JsonParser().parse(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
-			if (document.get("schema").getAsInt() != 1)
+			if (document.get("schema").getAsInt() != 2)
 			{
 				return;
 			}
@@ -161,16 +171,29 @@ final class WomSnapshotCache
 				return;
 			}
 			JsonArray groups = document.getAsJsonArray("groups");
-			if (groups == null || groups.size() != WomDirectoryClient.GROUPS.length)
+			if (groups == null)
 			{
 				return;
 			}
+			ChapterDirectory directory =
+				ChapterDirectory.parse(document.getAsJsonArray("directory"), groups.size());
 			Map<String, Set<String>> combined = new HashMap<>();
 			Map<String, List<WomDirectoryClient.ChapterMember>> chapters = new LinkedHashMap<>();
-			for (int i = 0; i < groups.size(); i++)
+			Set<Integer> ids = new HashSet<>();
+			for (JsonElement item : groups)
 			{
-				WomDirectoryClient.mergeGroup(groups.get(i).getAsJsonObject(), i, combined,
-											  chapters);
+				JsonObject group = item.getAsJsonObject();
+				int id = group.get("id").getAsInt();
+				HolyEmpireChapterCatalog.Chapter chapter = directory.forGroup(id);
+				if (chapter == null || !ids.add(id))
+				{
+					return;
+				}
+				WomDirectoryClient.mergeGroup(group, id, chapter.name, combined, chapters);
+			}
+			if (ids.size() != directory.groupCount())
+			{
+				return;
 			}
 			Map<String, List<String>> members = new HashMap<>();
 			for (Map.Entry<String, Set<String>> entry : combined.entrySet())
@@ -197,9 +220,9 @@ final class WomSnapshotCache
 					}
 				}
 			}
-			cached = new WomDirectoryClient.Snapshot(Collections.unmodifiableMap(members),
-													 Collections.unmodifiableMap(chapters),
-													 timestamp, publicHashes, warningAvailable);
+			cached = new WomDirectoryClient.Snapshot(
+				Collections.unmodifiableMap(members), Collections.unmodifiableMap(chapters),
+				timestamp, publicHashes, warningAvailable, directory);
 			fetchedAt = timestamp;
 		}
 		catch (Exception error)
@@ -214,19 +237,23 @@ final class WomSnapshotCache
 		throws IOException
 	{
 		JsonObject document = new JsonObject();
-		document.addProperty("schema", 1);
+		document.addProperty("schema", 2);
+		document.add("directory", snapshot.directory.toJson());
 		document.addProperty("fetchedAt", now);
 		JsonArray groups = new JsonArray();
-		for (int i = 0; i < WomDirectoryClient.GROUPS.length; i++)
+		for (HolyEmpireChapterCatalog.Chapter chapter : snapshot.directory.ordered)
 		{
-			List<WomDirectoryClient.ChapterMember> roster =
-				snapshot.chapters.get(WomDirectoryClient.CLANS[i]);
+			if (!chapter.hasWomRoster())
+			{
+				continue;
+			}
+			List<WomDirectoryClient.ChapterMember> roster = snapshot.chapters.get(chapter.name);
 			if (roster == null || roster.isEmpty())
 			{
 				throw new IOException("Missing WOM chapter");
 			}
 			JsonObject group = new JsonObject();
-			group.addProperty("id", WomDirectoryClient.GROUPS[i]);
+			group.addProperty("id", chapter.groupId);
 			JsonArray memberships = new JsonArray();
 			for (WomDirectoryClient.ChapterMember member : roster)
 			{

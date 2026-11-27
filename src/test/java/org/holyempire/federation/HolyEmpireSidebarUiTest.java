@@ -9,8 +9,14 @@ package org.holyempire.federation;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.util.*;
-import javax.swing.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -36,8 +42,7 @@ public class HolyEmpireSidebarUiTest
 		return null;
 	}
 
-	@Test
-	public void sidebarRendersAllChapterIconsAndRosterRankIcons() throws Exception
+	@Test public void sidebarRendersAllChapterIconsAndRosterRankIcons() throws Exception
 	{
 		final FederationPanel[] p = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> p[0] = new FederationPanel());

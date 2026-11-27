@@ -21,6 +21,43 @@ final class FederationMenuRankIcons
 	{
 	}
 
+	/**
+	 * Player Indicators runs before this plugin and puts the clan/friends-chat
+	 * rank before the player name. Its icon always wins over ours for people
+	 * in our own chapter, even if a previous refresh left one of our icons first.
+	 */
+	static boolean hasNativeRankIcon(String text, Set<Integer> owned)
+	{
+		if (text == null)
+		{
+			return false;
+		}
+		int offset = 0;
+		while (text.startsWith("<img=", offset))
+		{
+			int end = text.indexOf('>', offset + 5);
+			if (end < 0 || end - offset > 16)
+			{
+				return false;
+			}
+			int index;
+			try
+			{
+				index = Integer.parseInt(text.substring(offset + 5, end));
+			}
+			catch (NumberFormatException invalid)
+			{
+				return false;
+			}
+			if (owned == null || !owned.contains(index))
+			{
+				return true;
+			}
+			offset = end + 1;
+		}
+		return false;
+	}
+
 	static String apply(String text, int iconIndex, Set<Integer> owned, boolean enabled)
 	{
 		if (text == null)

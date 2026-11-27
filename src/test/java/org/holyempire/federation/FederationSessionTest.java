@@ -7,7 +7,10 @@
 
 package org.holyempire.federation;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -21,8 +24,7 @@ public class FederationSessionTest
 		return new WomDirectoryClient.Snapshot(Collections.unmodifiableMap(map));
 	}
 
-	@Test
-	public void chapterRankDataFollowsSessionEligibility()
+	@Test public void chapterRankDataFollowsSessionEligibility()
 	{
 		Map<String, List<String>> roster = new HashMap<>();
 		roster.put("alpha", Collections.singletonList("Holy Empire"));
@@ -39,8 +41,7 @@ public class FederationSessionTest
 		assertTrue(state.chaptersFor("outsider").isEmpty());
 	}
 
-	@Test
-	public void loginAndLogoutImmediatelyClear()
+	@Test public void loginAndLogoutImmediatelyClear()
 	{
 		FederationSession state = new FederationSession();
 		assertTrue(state.observe("Alpha", "Holy Empire"));
@@ -52,8 +53,7 @@ public class FederationSessionTest
 		assertFalse(state.isEligible());
 	}
 
-	@Test
-	public void anyRosterMemberCanSeeRoster()
+	@Test public void anyRosterMemberCanSeeRoster()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("beta", "Holy Chaos");
@@ -62,8 +62,7 @@ public class FederationSessionTest
 		assertEquals(2, state.rosterFor("beta").size());
 	}
 
-	@Test
-	public void unknownAccountCannotSeeRoster()
+	@Test public void unknownAccountCannotSeeRoster()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("outsider", "Holy Empire");
@@ -72,8 +71,7 @@ public class FederationSessionTest
 		assertTrue(state.rosterFor("outsider").isEmpty());
 	}
 
-	@Test
-	public void oldResponseCannotOverwriteLaterLogin()
+	@Test public void oldResponseCannotOverwriteLaterLogin()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("alpha", "Holy Empire");
@@ -87,8 +85,7 @@ public class FederationSessionTest
 		assertEquals(2, state.rosterFor("beta").size());
 	}
 
-	@Test
-	public void returningToSameAccountRejectsOldSnapshot()
+	@Test public void returningToSameAccountRejectsOldSnapshot()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("alpha", "Holy Empire");
@@ -99,8 +96,7 @@ public class FederationSessionTest
 		assertTrue(state.rosterFor("alpha").isEmpty());
 	}
 
-	@Test
-	public void failedRefreshDisablesPreviouslyEligibleAccount()
+	@Test public void failedRefreshDisablesPreviouslyEligibleAccount()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("alpha", "Holy Empire");
@@ -110,8 +106,7 @@ public class FederationSessionTest
 		assertTrue(state.rosterFor("alpha").isEmpty());
 	}
 
-	@Test
-	public void womRosterMembershipGrantsAccessRegardlessOfNativeChapter()
+	@Test public void womRosterMembershipGrantsAccessRegardlessOfNativeChapter()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("alpha", "Holy Chaos");
@@ -123,8 +118,7 @@ public class FederationSessionTest
 		assertTrue(state.isEligible());
 	}
 
-	@Test
-	public void nativeClanDisappearanceRetainsWomBasedMembershipAfterRefresh()
+	@Test public void nativeClanDisappearanceRetainsWomBasedMembershipAfterRefresh()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("alpha", "Holy Empire");
@@ -138,8 +132,7 @@ public class FederationSessionTest
 		assertTrue("WOM membership is sufficient without native clan access", state.isEligible());
 	}
 
-	@Test
-	public void nativeChapterSwitchRejectsInFlightResponseEvenForSameAccount()
+	@Test public void nativeChapterSwitchRejectsInFlightResponseEvenForSameAccount()
 	{
 		FederationSession state = new FederationSession();
 		state.observe("alpha", "Holy Empire");
@@ -149,4 +142,23 @@ public class FederationSessionTest
 		assertTrue(state.publish("alpha", state.generation(), sample("alpha")));
 		assertTrue(state.isEligible());
 	}
+    @Test public void underscoreNamesMatchRosterAndRank()
+    {
+        Map<String, List<String>> roster = new HashMap<>();
+        roster.put("my sp00n", Collections.singletonList("Sacred Order"));
+        Map<String, List<WomDirectoryClient.ChapterMember>> chapters = new HashMap<>();
+        chapters.put("Sacred Order", Collections.singletonList(
+            new WomDirectoryClient.ChapterMember("my sp00n", "sheriff")));
+        FederationSession state = new FederationSession();
+        state.observe("MY_SP00N", "");
+        assertTrue(state.publish("my sp00n", state.generation(),
+            new WomDirectoryClient.Snapshot(roster, chapters)));
+        assertTrue(state.isEligible());
+        assertEquals(Collections.singletonList("Sacred Order"),
+            state.rosterFor("MY_SP00N").get(WomDirectoryClient.normalize("MY_SP00N")));
+        assertEquals("sheriff", state.rankFor("MY_SP00N").rank);
+        assertFalse(state.observe("my sp00n", ""));
+        assertTrue(state.rosterFor("MY_SP00N").containsKey("my sp00n"));
+        assertNull(state.rankFor("MYSP00N"));
+    }
 }

@@ -45,8 +45,7 @@ public class ClanVexillumEquipTriggerTest
 			});
 	}
 
-	@Test
-	public void detectsEveryVexillumColorInWeaponSlot()
+	@Test public void detectsEveryVexillumColorInWeaponSlot()
 	{
 		int[] colors = {ItemID.CLAN_VEXILLUM_BLACK,		ItemID.CLAN_VEXILLUM_ORANGE,
 						ItemID.CLAN_VEXILLUM_BLUE,		ItemID.CLAN_VEXILLUM_RED,
@@ -64,8 +63,7 @@ public class ClanVexillumEquipTriggerTest
 		}
 	}
 
-	@Test
-	public void triggersAgainOnlyAfterUnequipAndRespectsCooldown()
+	@Test public void triggersAgainOnlyAfterUnequipAndRespectsCooldown()
 	{
 		ClanVexillumEquipTrigger trigger = new ClanVexillumEquipTrigger();
 		assertFalse(trigger.onContainerChanged(InventoryID.INVENTORY.getId(),
@@ -89,8 +87,7 @@ public class ClanVexillumEquipTriggerTest
 											  equipped(ItemID.CLAN_VEXILLUM_BLUE), 37_000));
 	}
 
-	@Test
-	public void ignoresUnrelatedEquipmentEvents()
+	@Test public void ignoresUnrelatedEquipmentEvents()
 	{
 		ClanVexillumEquipTrigger trigger = new ClanVexillumEquipTrigger();
 		assertFalse(trigger.onContainerChanged(InventoryID.EQUIPMENT.getId(), null, 100));

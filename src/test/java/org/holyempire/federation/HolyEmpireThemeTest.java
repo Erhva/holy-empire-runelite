@@ -66,8 +66,7 @@ public class HolyEmpireThemeTest
 		}
 	}
 
-	@Test
-	public void mottoAndImperialChapterHoverKeepHolyEmpireBlue() throws Exception
+	@Test public void mottoAndImperialChapterHoverKeepHolyEmpireBlue() throws Exception
 	{
 		FederationPanel[] ref = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> ref[0] = new FederationPanel());
@@ -110,8 +109,7 @@ public class HolyEmpireThemeTest
 		}
 	}
 
-	@Test
-	public void restrictedBanStylingDoesNotChangeOfficerGate() throws Exception
+	@Test public void restrictedBanStylingDoesNotChangeOfficerGate() throws Exception
 	{
 		FederationPanel[] ref = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> {

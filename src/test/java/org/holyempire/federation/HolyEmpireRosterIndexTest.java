@@ -7,7 +7,11 @@
 
 package org.holyempire.federation;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -22,15 +26,13 @@ public class HolyEmpireRosterIndexTest
 		return roster;
 	}
 
-	@Test
-	public void globalSearchFindsPlayersAcrossCCs()
+	@Test public void globalSearchFindsPlayersAcrossCCs()
 	{
 		assertEquals(Collections.singletonList("gamma"),
 					 HolyEmpireRosterIndex.search(sample(), "GAM"));
 	}
 
-	@Test
-	public void globalSearchOnlyMatchesPlayerNames()
+	@Test public void globalSearchOnlyMatchesPlayerNames()
 	{
 		assertEquals(Collections.emptyList(), HolyEmpireRosterIndex.search(sample(), "CaDiA"));
 		assertEquals(Collections.emptyList(), HolyEmpireRosterIndex.search(sample(), "World 465"));
@@ -41,15 +43,13 @@ public class HolyEmpireRosterIndexTest
 					 HolyEmpireRosterIndex.search(names, "holy"));
 	}
 
-	@Test
-	public void emptyQuerySearchesWholeRoster()
+	@Test public void emptyQuerySearchesWholeRoster()
 	{
 		assertEquals(Arrays.asList("alpha", "beta", "gamma"),
 					 HolyEmpireRosterIndex.search(sample(), ""));
 	}
 
-	@Test
-	public void eachCCContainsOnlyItsOwnMembers()
+	@Test public void eachCCContainsOnlyItsOwnMembers()
 	{
 		assertEquals(Collections.singletonList("alpha"),
 					 HolyEmpireRosterIndex.inClan(sample(), "Holy Empire"));
@@ -58,8 +58,7 @@ public class HolyEmpireRosterIndexTest
 		assertEquals(Collections.emptyList(), HolyEmpireRosterIndex.inClan(sample(), "Holy Soul"));
 	}
 
-	@Test
-	public void aPlayerInMultipleChaptersStillAppearsOnce()
+	@Test public void aPlayerInMultipleChaptersStillAppearsOnce()
 	{
 		assertEquals(Collections.singletonList("alpha"),
 					 HolyEmpireRosterIndex.search(sample(), "alpha"));

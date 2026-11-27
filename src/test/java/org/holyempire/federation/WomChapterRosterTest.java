@@ -7,8 +7,13 @@
 
 package org.holyempire.federation;
 
-import com.google.gson.*;
-import java.util.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -27,8 +32,7 @@ public class WomChapterRosterTest
 		return m;
 	}
 
-	@Test
-	public void ownerFirstAndChapterSpecificRankOrder()
+	@Test public void ownerFirstAndChapterSpecificRankOrder()
 	{
 		JsonObject group = new JsonObject();
 		group.addProperty("id", 4586);
@@ -56,15 +60,13 @@ public class WomChapterRosterTest
 		assertEquals("Bronze", ordered.get(1).readableRank());
 	}
 
-	@Test
-	public void nullRankIsStillVisible()
+	@Test public void nullRankIsStillVisible()
 	{
 		assertEquals("Unranked",
 					 new WomDirectoryClient.ChapterMember("Someone", "unranked").readableRank());
 	}
 
-	@Test
-	public void chapterSearchPreservesRankOrder()
+	@Test public void chapterSearchPreservesRankOrder()
 	{
 		List<WomDirectoryClient.ChapterMember> members =
 			Arrays.asList(new WomDirectoryClient.ChapterMember("Owner", "owner"),
@@ -79,8 +81,7 @@ public class WomChapterRosterTest
 		assertEquals(1, HolyEmpireRosterIndex.searchChapter(members, "bronze user").size());
 	}
 
-	@Test
-	public void chatsStayAlignedWithAll16Groups()
+	@Test public void chatsStayAlignedWithAll16Groups()
 	{
 		assertEquals(WomDirectoryClient.GROUPS.length, WomDirectoryClient.CLANS.length);
 		assertEquals(WomDirectoryClient.GROUPS.length, WomDirectoryClient.CLAN_CHATS.length);

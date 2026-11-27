@@ -7,12 +7,27 @@
 
 package org.holyempire.federation;
 
-import com.google.gson.*;
-import java.io.*;
-import java.net.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import okhttp3.OkHttpClient;
@@ -32,7 +47,7 @@ final class CentralRosterClient
 	{
 	}
 
-	private static URL url(String base, String suffix) throws IOException
+	static URL url(String base, String suffix) throws IOException
 	{
 		URI uri;
 		try
@@ -172,15 +187,45 @@ final class CentralRosterClient
 
 	static WomDirectoryClient.Snapshot fetch(String base, OkHttpClient http) throws Exception
 	{
-		JsonObject manifest =
-			new JsonParser()
-				.parse(new String(read(url(base, "/v1/manifest.json"), MAX_MANIFEST, http),
-								  StandardCharsets.UTF_8))
-				.getAsJsonObject();
-		if (manifest.get("schema_version").getAsInt() != 1 ||
-			manifest.get("group_count").getAsInt() != WomDirectoryClient.GROUPS.length)
+		try
 		{
-			throw new IOException("Unexpected central roster schema");
+			return fetchVersion(base, http, 2);
+		}
+		catch (IOException missingV2)
+		{
+			// V1 remains available for existing deployments until V2 is published.
+			// Never downgrade on malformed V2 data, checksum failures or timeouts.
+			if (!"Holy Empire CDN returned HTTP 404".equals(missingV2.getMessage()))
+			{
+				throw missingV2;
+			}
+			return fetchVersion(base, http, 1);
+		}
+	}
+
+	private static JsonObject readManifest(String base, OkHttpClient http, int version)
+		throws Exception
+	{
+		return new JsonParser()
+			.parse(
+				new String(read(url(base, "/v" + version + "/manifest.json"), MAX_MANIFEST, http),
+						   StandardCharsets.UTF_8))
+			.getAsJsonObject();
+	}
+
+	private static WomDirectoryClient.Snapshot fetchVersion(String base, OkHttpClient http,
+															int version) throws Exception
+	{
+		JsonObject manifest = readManifest(base, http, version);
+		if (manifest.get("schema_version").getAsInt() != version)
+		{
+			throw new IOException("Unexpected central roster schema version");
+		}
+		int count = manifest.get("group_count").getAsInt();
+		if ((version == 1 && count != WomDirectoryClient.GROUPS.length) ||
+			(version == 2 && (count < 16 || count > ChapterDirectory.MAX_GROUPS)))
+		{
+			throw new IOException("Unexpected central roster schema group count");
 		}
 		long asOf = manifest.get("generated_at").getAsLong();
 		long now = System.currentTimeMillis() / 1000;
@@ -195,7 +240,7 @@ final class CentralRosterClient
 		{
 			throw new IOException("Invalid central roster manifest");
 		}
-		byte[] zipped = read(url(base, "/v1/" + path), MAX_COMPRESSED, http);
+		byte[] zipped = read(url(base, "/v" + version + "/" + path), MAX_COMPRESSED, http);
 		if (zipped.length != manifest.get("size").getAsInt() ||
 			!hex(MessageDigest.getInstance("SHA-256").digest(zipped)).equals(digest))
 		{
@@ -212,33 +257,65 @@ final class CentralRosterClient
 		}
 		JsonObject data =
 			new JsonParser().parse(new String(unzipped, StandardCharsets.UTF_8)).getAsJsonObject();
-		if (data.get("schema_version").getAsInt() != 1 ||
+		if (data.get("schema_version").getAsInt() != version ||
 			data.get("generated_at").getAsLong() != asOf ||
-			data.get("group_count").getAsInt() != WomDirectoryClient.GROUPS.length)
+			data.get("group_count").getAsInt() != count)
 		{
 			throw new IOException("Central roster metadata mismatch");
 		}
+		ChapterDirectory directory =
+			version == 2 ? ChapterDirectory.parse(data.getAsJsonArray("chapters"), count)
+						 : ChapterDirectory.legacy();
 		JsonArray groups = data.getAsJsonArray("groups");
-		if (groups == null || groups.size() != WomDirectoryClient.GROUPS.length)
+		if (groups == null || groups.size() != count || directory.groupCount() != count)
 		{
 			throw new IOException("Missing WOM group");
 		}
 		Map<String, Set<String>> combined = new HashMap<>();
 		Map<String, List<WomDirectoryClient.ChapterMember>> chapters = new LinkedHashMap<>();
-		for (int i = 0; i < groups.size(); i++)
+		Set<Integer> groupIds = new HashSet<>();
+		for (JsonElement item : groups)
 		{
-			WomDirectoryClient.mergeGroup(groups.get(i).getAsJsonObject(), i, combined, chapters);
+			JsonObject group = item.getAsJsonObject();
+			int id = group.get("id").getAsInt();
+			HolyEmpireChapterCatalog.Chapter chapter = directory.forGroup(id);
+			if (chapter == null || !groupIds.add(id) ||
+				(group.has("clan") && !chapter.name.equals(group.get("clan").getAsString())))
+			{
+				throw new IOException("Unexpected WOM group in central roster");
+			}
+			WomDirectoryClient.mergeGroup(group, id, chapter.name, combined, chapters);
+		}
+		if (groupIds.size() != count || chapters.size() != count)
+		{
+			throw new IOException("Incomplete WOM chapter directory");
 		}
 		Map<String, List<String>> members = new HashMap<>();
-		for (Map.Entry<String, Set<String>> e : combined.entrySet())
+		for (Map.Entry<String, Set<String>> member : combined.entrySet())
 		{
-			members.put(e.getKey(), Collections.unmodifiableList(new ArrayList<>(e.getValue())));
+			members.put(member.getKey(),
+						Collections.unmodifiableList(new ArrayList<>(member.getValue())));
 		}
 		Set<String> publicHashes = Collections.emptySet();
 		boolean publicStatusAvailable = false;
 		try
 		{
-			Set<String> warnings = readPublicWarnings(base, manifest, digest, asOf, http);
+			JsonObject warningManifest = manifest;
+			String warningDigest = digest;
+			if (version == 2)
+			{
+				// Public ban warnings are still bound to the legacy V1 checksum.
+				// Keep them available without changing the private ban-list protocol.
+				warningManifest = readManifest(base, http, 1);
+				if (warningManifest.get("schema_version").getAsInt() != 1 ||
+					warningManifest.get("generated_at").getAsLong() != asOf)
+				{
+					throw new IOException("Unmatched legacy warning generation");
+				}
+				warningDigest = warningManifest.get("sha256").getAsString();
+			}
+			Set<String> warnings =
+				readPublicWarnings(base, warningManifest, warningDigest, asOf, http);
 			if (warnings != null)
 			{
 				publicHashes = warnings;
@@ -252,6 +329,6 @@ final class CentralRosterClient
 		}
 		return new WomDirectoryClient.Snapshot(Collections.unmodifiableMap(members),
 											   Collections.unmodifiableMap(chapters), asOf * 1000,
-											   publicHashes, publicStatusAvailable);
+											   publicHashes, publicStatusAvailable, directory);
 	}
 }

@@ -18,10 +18,11 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-/** Classpath-only art: rendering the sidebar never performs HTTP requests. */
+/** Sidebar art: display uses verified memory cache or bundled icons; never HTTP on the EDT. */
 final class HolyEmpireAssets
 {
 	private static final Map<String, Icon> CACHE = new ConcurrentHashMap<>();
+	private static volatile RemoteChapterImages remoteImages;
 	private static final Icon MISSING =
 		new ImageIcon(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB));
 
@@ -65,9 +66,28 @@ final class HolyEmpireAssets
 		});
 	}
 
+	static void useRemoteChapterImages(RemoteChapterImages images)
+	{
+		remoteImages = images;
+	}
+
 	static Icon chapterIcon(String key)
 	{
-		return load("/chapter-icons/" + key + ".png");
+		return chapterIcon(key, null);
+	}
+
+	static Icon chapterIcon(String key, String digest)
+	{
+		RemoteChapterImages images = remoteImages;
+		Icon verified = images == null ? null : images.iconForHash(digest);
+		if (verified != null)
+		{
+			return verified;
+		}
+		Icon fallback = key != null && key.matches("[a-z0-9-]{1,32}")
+							? load("/chapter-icons/" + key + ".png")
+							: MISSING;
+		return fallback == MISSING ? load("/chapter-icons/holy-empire.png") : fallback;
 	}
 
 	/** Bundled icon artwork; neither sidebar rendering nor loading needs a network request. */

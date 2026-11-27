@@ -8,7 +8,13 @@
 package org.holyempire.federation;
 
 import java.awt.Color;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import org.junit.Test;
@@ -16,27 +22,22 @@ import static org.junit.Assert.*;
 
 public class HolyEmpireAdvancedOptionsTest
 {
-	@Test
-	public void allThreeChannelsUseSameChapterColorOrSharedFallback()
+	@Test public void allThreeChannelsUseSameChapterColorOrSharedFallback()
 	{
 		FederationConfig config = new FederationConfig() {
-			@Override
-			public Color memberColor()
+			@Override public Color memberColor()
 			{
 				return Color.BLUE;
 			}
-			@Override
-			public Color dotColorHolyEmpire()
+			@Override public Color dotColorHolyEmpire()
 			{
 				return Color.RED;
 			}
-			@Override
-			public Color dotColorHolyChaos()
+			@Override public Color dotColorHolyChaos()
 			{
 				return Color.ORANGE;
 			}
-			@Override
-			public boolean useChapterDotColors()
+			@Override public boolean useChapterDotColors()
 			{
 				return true;
 			}
@@ -57,13 +58,11 @@ public class HolyEmpireAdvancedOptionsTest
 		assertEquals(Color.BLUE,
 					 ChapterIndicatorColors.menuColor(config, Collections.singletonList("Other")));
 		FederationConfig original = new FederationConfig() {
-			@Override
-			public Color memberColor()
+			@Override public Color memberColor()
 			{
 				return Color.MAGENTA;
 			}
-			@Override
-			public Color dotColorHolyEmpire()
+			@Override public Color dotColorHolyEmpire()
 			{
 				return Color.RED;
 			}
@@ -81,8 +80,7 @@ public class HolyEmpireAdvancedOptionsTest
 		assertFalse(original.useChapterDotColors());
 	}
 
-	@Test
-	public void oneSectionOffersExactlyOnePickerForEachChapter() throws Exception
+	@Test public void oneSectionOffersExactlyOnePickerForEachChapter() throws Exception
 	{
 		int configured = 0;
 		for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
@@ -101,7 +99,7 @@ public class HolyEmpireAdvancedOptionsTest
 		assertEquals(17, configured);
 		ConfigSection section = FederationConfig.class.getField("chapterDotsSection")
 									.getAnnotation(ConfigSection.class);
-		assertTrue(section.name().contains("Chapter colors"));
+		assertEquals("Advanced: Chapter Colors", section.name());
 		assertTrue(section.closedByDefault());
 		assertEquals("Empire Indicators", FederationConfig.class.getField("minimapDotSection")
 											  .getAnnotation(ConfigSection.class)
@@ -171,8 +169,7 @@ public class HolyEmpireAdvancedOptionsTest
 		}
 	}
 
-	@Test
-	public void menuRankIconRestoredToPrefixWithoutDuplicatingNativeIcons()
+	@Test public void menuRankIconRestoredToPrefixWithoutDuplicatingNativeIcons()
 	{
 		Set<Integer> owned = new HashSet<>(Collections.singletonList(90));
 		String nativePlayer = "<img=4><col=ff0000>Player</col> (level-126)";
@@ -194,8 +191,37 @@ public class HolyEmpireAdvancedOptionsTest
 		assertNull(FederationMenuRankIcons.apply(null, 90, owned, true));
 	}
 
-	@Test
-	public void emperorAndRankIndexRetainMembershipBoundaries()
+	@Test public void nativePlayerIndicatorsRankWinsForSameChapterMenus()
+	{
+		Set<Integer> own = new HashSet<>(Collections.singletonList(90));
+		String name = "<col=ff0000>Player</col> (level-126)";
+		String chapter = " <col=98c8f8>[Holy Empire]</col>";
+		String nativeIcon = "<img=4>";
+		assertTrue(FederationMenuRankIcons.hasNativeRankIcon(nativeIcon + name, own));
+		assertTrue(FederationMenuRankIcons.hasNativeRankIcon("<img=90>" + nativeIcon + name, own));
+		assertFalse(FederationMenuRankIcons.hasNativeRankIcon("<img=90>" + name, own));
+		assertFalse(FederationMenuRankIcons.hasNativeRankIcon(name, own));
+		assertFalse(FederationMenuRankIcons.hasNativeRankIcon(null, own));
+
+		// The Player Indicators icon stays first, and a legacy Holy Empire
+		// prefix is cleaned without disturbing the native icon or chapter.
+		boolean showRank = SameChapterVisibility.showRankIcon(
+			true, true, true, true,
+			FederationMenuRankIcons.hasNativeRankIcon(nativeIcon + name, own));
+		assertFalse(showRank);
+		String existing = "<img=90>" + nativeIcon + name + chapter;
+		assertEquals(nativeIcon + name + chapter,
+					 FederationMenuRankIcons.apply(existing, -1, own, showRank));
+		// If Player Indicators does not render a rank, our own toggle can
+		// supply one without changing the independently controlled CC tag.
+		assertTrue(SameChapterVisibility.showRankIcon(false, true, true, true, false));
+		assertEquals("<img=90>" + name + chapter,
+					 FederationMenuRankIcons.apply(name + chapter, 90, own, true));
+		assertEquals(name, FederationMenuTags.apply(name, Collections.singletonList("Holy Empire"),
+													java.awt.Color.BLUE, false));
+	}
+
+	@Test public void emperorAndRankIndexRetainMembershipBoundaries()
 	{
 		FederationSession session = new FederationSession();
 		session.observe("captain", "Holy Empire");

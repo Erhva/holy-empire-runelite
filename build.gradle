@@ -4,11 +4,17 @@ dependencies {
  compileOnly group:'net.runelite', name:'client', version:'latest.release'
  testImplementation 'junit:junit:4.13.2'
  testImplementation group:'net.runelite', name:'client', version:'latest.release'
- testImplementation 'com.google.code.gson:gson:2.10.1'
 }
 group='org.holyempire'
 version='0.1.0-SNAPSHOT'
 java { sourceCompatibility=JavaVersion.VERSION_11; targetCompatibility=JavaVersion.VERSION_11 }
+
+// Targeting Java 11 bytecode is insufficient when compiling on JDK 21:
+// --release also rejects accidental calls to newer JDK APIs.
+tasks.withType(JavaCompile).configureEach {
+ options.release = 11
+}
+
 
 
 tasks.named('test') {

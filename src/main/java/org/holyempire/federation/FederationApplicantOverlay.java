@@ -35,8 +35,7 @@ public final class FederationApplicantOverlay extends Overlay
 	private final Client client;
 	private final FederationPlugin plugin;
 
-	@Inject
-	public FederationApplicantOverlay(Client client, FederationPlugin plugin)
+	@Inject public FederationApplicantOverlay(Client client, FederationPlugin plugin)
 	{
 		this.client = client;
 		this.plugin = plugin;
@@ -45,8 +44,7 @@ public final class FederationApplicantOverlay extends Overlay
 		setPriority(PRIORITY_HIGH);
 	}
 
-	@Override
-	public Dimension render(Graphics2D graphics)
+	@Override public Dimension render(Graphics2D graphics)
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
 		{

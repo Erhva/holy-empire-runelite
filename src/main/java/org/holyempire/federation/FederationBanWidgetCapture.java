@@ -49,8 +49,8 @@ final class FederationBanWidgetCapture
 		Widget[] children = entries.getChildren();
 		if (children == null)
 		{
-			throw new IllegalStateException(
-				"Ban-list UI is not populated; open Bans and try again.");
+			// The visible Bans container can have no dynamic children.
+			children = new Widget[0];
 		}
 		// RuneLite getChildren() is a sparse dynamic-child array. Its allocated
 		// length can greatly exceed the number of bans shown (e.g. hundreds of
@@ -63,7 +63,9 @@ final class FederationBanWidgetCapture
 		List<String> names = new ArrayList<>();
 		for (Widget child : children)
 		{
-			if (child == null || child.getText() == null)
+			// Native clan-ban rows may retain text in hidden/deleted dynamic
+			// widget slots after an unban. Hidden rows are not active bans.
+			if (child == null || child.isSelfHidden() || child.getText() == null)
 			{
 				continue;
 			}

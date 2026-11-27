@@ -49,8 +49,7 @@ public class HolyEmpireMemberExperienceTest
 
 	private static final Color GOLD = new Color(255, 215, 0);
 
-	@Test
-	public void onlyVerifiedMembersCanBrowseAndOthersGetJoinLink() throws Exception
+	@Test public void onlyVerifiedMembersCanBrowseAndOthersGetJoinLink() throws Exception
 	{
 		final FederationPanel[] ref = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> ref[0] = new FederationPanel());
@@ -65,7 +64,7 @@ public class HolyEmpireMemberExperienceTest
 			JButton join = (JButton)named(ref[0], "holyEmpireJoinHere");
 			assertNotNull(join);
 			assertEquals("Join The Empire Here", join.getText());
-			assertEquals("https://discord.gg/w465", join.getToolTipText());
+			assertEquals(SwingTextSafety.boxedTooltip("https://discord.gg/w465"), join.getToolTipText());
 			JPanel buttonRow = (JPanel)named(ref[0], "holyEmpireJoinButtonRow");
 			assertNotNull("Join button must be inside a centering row", buttonRow);
 			buttonRow.setSize(300, join.getPreferredSize().height + 6);
@@ -81,7 +80,7 @@ public class HolyEmpireMemberExperienceTest
 				details.getText());
 			assertTrue(details.getLineWrap());
 			assertTrue(details.getWrapStyleWord());
-			assertEquals(details.getText(), details.getToolTipText());
+			assertEquals(SwingTextSafety.boxedTooltip(details.getText()), details.getToolTipText());
 			JLabel footer =
 				(JLabel)((BorderLayout)ref[0].getLayout()).getLayoutComponent(BorderLayout.SOUTH);
 			assertFalse("Unverified footer must not show Membership required", footer.isVisible());
@@ -91,8 +90,7 @@ public class HolyEmpireMemberExperienceTest
 		});
 	}
 
-	@Test
-	public void developerPreviewHidesAndRestoresWithoutChangingVerification() throws Exception
+	@Test public void developerPreviewHidesAndRestoresWithoutChangingVerification() throws Exception
 	{
 		final FederationPanel[] ref = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> ref[0] = new FederationPanel());
@@ -139,8 +137,7 @@ public class HolyEmpireMemberExperienceTest
 		});
 	}
 
-	@Test
-	public void globalSearchDisplaysRankIconEmperorAndWrappedStatus() throws Exception
+	@Test public void globalSearchDisplaysRankIconEmperorAndWrappedStatus() throws Exception
 	{
 		final FederationPanel[] ref = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> ref[0] = new FederationPanel());
@@ -164,7 +161,7 @@ public class HolyEmpireMemberExperienceTest
 			JLabel footer =
 				(JLabel)((BorderLayout)ref[0].getLayout()).getLayoutComponent(BorderLayout.SOUTH);
 			assertTrue(footer.getText().contains("<br>"));
-			assertTrue(footer.getToolTipText().contains("16 WOM rosters"));
+			assertTrue(footer.getToolTipText().contains("2 WOM rosters"));
 
 			JTextField search = (JTextField)named(ref[0], "holyEmpireGlobalSearch");
 			search.setText("not needed");

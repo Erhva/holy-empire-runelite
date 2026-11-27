@@ -124,8 +124,7 @@ public class FederationOfficerEnrollmentClientTest
 		}
 	}
 
-	@Test
-	public void awaitingGameDisplaysPendingReview() throws Exception
+	@Test public void awaitingGameDisplaysPendingReview() throws Exception
 	{
 		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/v1/officer-enroll/", exchange -> {
@@ -175,8 +174,7 @@ public class FederationOfficerEnrollmentClientTest
 		}
 	}
 
-	@Test
-	public void tokenFormatAndOfficialOriginArePinned() throws Exception
+	@Test public void tokenFormatAndOfficialOriginArePinned() throws Exception
 	{
 		String one = FederationOfficerEnrollmentClient.randomCredential();
 		String two = FederationOfficerEnrollmentClient.randomCredential();

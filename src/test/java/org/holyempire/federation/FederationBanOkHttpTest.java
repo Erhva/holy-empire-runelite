@@ -90,8 +90,7 @@ public class FederationBanOkHttpTest
 		}
 	}
 
-	@Test
-	public void injectedOkHttpUploadsExplicitCaptureOnly() throws Exception
+	@Test public void injectedOkHttpUploadsExplicitCaptureOnly() throws Exception
 	{
 		String msg = FederationBanUploadClient.send(
 			snapshot(), base(), "test_officer_credential_minimum_24_chars", new OkHttpClient());
@@ -103,8 +102,21 @@ public class FederationBanOkHttpTest
 		assertEquals(1, requestCount.get());
 	}
 
-	@Test
-	public void upload429ExplainsRetryAndUnchangedRegistry() throws Exception
+	@Test public void successfulSyncConfirmsRemovedBanCount() throws Exception
+	{
+		responseBody =
+			"{\"ok\":true,\"chapter\":\"Holy Chaos\",\"count\":2," +
+			"\"revision\":4,\"removed_bans\":10,\"new_bans\":[]}";
+		FederationBanUploadClient.Receipt ack = FederationBanUploadClient.sendReceipt(
+			snapshot(),base(),"test_officer_credential_minimum_24_chars",
+			new OkHttpClient());
+		assertEquals(4,ack.revision);
+		assertTrue("Admins must see that previously banned players were removed",
+			ack.message.contains("Removed 10"));
+		assertTrue(ack.newBans.isEmpty());
+	}
+
+	@Test public void upload429ExplainsRetryAndUnchangedRegistry() throws Exception
 	{
 		responseCode = 429;
 		retryAfter = "91";
@@ -124,8 +136,7 @@ public class FederationBanOkHttpTest
 		assertEquals(1, requestCount.get());
 	}
 
-	@Test
-	public void uploadRejectsCrossOriginAndSameOriginRedirects() throws Exception
+	@Test public void uploadRejectsCrossOriginAndSameOriginRedirects() throws Exception
 	{
 		responseCode = 307;
 		try
@@ -141,8 +152,7 @@ public class FederationBanOkHttpTest
 		assertEquals(1, requestCount.get());
 	}
 
-	@Test
-	public void oversizedAcknowledgementIsRejected() throws Exception
+	@Test public void oversizedAcknowledgementIsRejected() throws Exception
 	{
 		responseBody = "x".repeat(2100);
 		try
@@ -157,8 +167,7 @@ public class FederationBanOkHttpTest
 		}
 	}
 
-	@Test
-	public void unapprovedHttpEndpointsCannotReceiveOfficerCredential() throws Exception
+	@Test public void unapprovedHttpEndpointsCannotReceiveOfficerCredential() throws Exception
 	{
 		try
 		{
