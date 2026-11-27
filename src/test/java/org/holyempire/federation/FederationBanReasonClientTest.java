@@ -30,8 +30,9 @@ public class FederationBanReasonClientTest
 
 	private String base()
 	{
-		return "http://127.0.0.1:" + server.getAddress().getPort();
+		return FederationBanUploadClient.OFFICIAL_ENDPOINT;
 	}
+
 
 	@Before public void start() throws Exception
 	{
@@ -49,12 +50,10 @@ public class FederationBanReasonClientTest
 			}
 		});
 		server.start();
-		System.setProperty("holyempire.testBanSyncOrigin",base());
 	}
 
 	@After public void stop()
 	{
-		System.clearProperty("holyempire.testBanSyncOrigin");
 		if (server != null) server.stop(0);
 	}
 
@@ -62,6 +61,17 @@ public class FederationBanReasonClientTest
 	{
 		return FederationBanRegistry.fromVisibleWidget("Holy Chaos",
 			Arrays.asList("Banned Test","Other Ban","New Ban"),Instant.now());
+	}
+
+	/** Route only test HTTP traffic to the local fixture server. Production URLs remain pinned. */
+	private OkHttpClient testHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.Request request = chain.request();
+			okhttp3.HttpUrl local = request.url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(request.newBuilder().url(local).build());
+		}).build();
 	}
 
 	@Test public void formListsNewBansFirstAndNeverPostsByDefault()
@@ -119,7 +129,7 @@ public class FederationBanReasonClientTest
 	{
 		FederationBanReasonClient.Result result = FederationBanReasonClient.send(
 			"Holy Chaos","Banned Test","Harassment","Disruptive behavior",4,
-			false,base(),"approved_officer_key_minimum_24_characters",new OkHttpClient());
+			false,base(),"approved_officer_key_minimum_24_characters",testHttp());
 		assertFalse(result.published);
 		assertTrue(result.message.contains("Nothing was posted"));
 		assertTrue(received.get().contains("\"action\":\"annotate\""));
@@ -134,7 +144,7 @@ public class FederationBanReasonClientTest
 			"\"rsn\":\"Banned Test\",\"discord_posted\":false}";
 		FederationBanReasonClient.Result result = FederationBanReasonClient.clear(
 			"Holy Chaos","Banned Test",4,base(),
-			"approved_officer_key_minimum_24_characters",new OkHttpClient());
+			"approved_officer_key_minimum_24_characters",testHttp());
 		assertTrue(result.message.contains("cleared"));
 		assertTrue(result.message.contains("remains active"));
 		assertTrue(received.get().contains("\"action\":\"clear_reason\""));
@@ -150,7 +160,7 @@ public class FederationBanReasonClientTest
 			"\"rsn\":\"Banned Test\",\"discord_posted\":true}";
 		FederationBanReasonClient.Result result = FederationBanReasonClient.clear(
 			"Holy Chaos","Banned Test",4,base(),
-			"approved_officer_key_minimum_24_characters",new OkHttpClient());
+			"approved_officer_key_minimum_24_characters",testHttp());
 		assertTrue(result.message.contains("remains unchanged"));
 	}
 
@@ -163,7 +173,7 @@ public class FederationBanReasonClientTest
 			+ "1391781923365453945/1599999999999999999\"}";
 		FederationBanReasonClient.Result result = FederationBanReasonClient.send(
 			"Holy Chaos","Banned Test","Harassment","Disruptive behavior",4,
-			true,base(),"approved_officer_key_minimum_24_characters",new OkHttpClient());
+			true,base(),"approved_officer_key_minimum_24_characters",testHttp());
 		assertTrue(result.published);
 		assertTrue(result.discordUrl.contains("/1391781923365453945/"));
 		assertTrue(received.get().contains("\"publish\":true"));

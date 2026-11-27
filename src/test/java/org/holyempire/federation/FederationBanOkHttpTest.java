@@ -73,27 +73,37 @@ public class FederationBanOkHttpTest
 			}
 		});
 		server.start();
-		System.setProperty("holyempire.testBanSyncOrigin", base());
 	}
 
 	private String base()
 	{
-		return "http://127.0.0.1:" + server.getAddress().getPort();
+		return FederationBanUploadClient.OFFICIAL_ENDPOINT;
 	}
+
 
 	@After public void stop()
 	{
-		System.clearProperty("holyempire.testBanSyncOrigin");
 		if (server != null)
 		{
 			server.stop(0);
 		}
 	}
 
+	/** Route only test HTTP traffic to the local fixture server. Production URLs remain pinned. */
+	private OkHttpClient testHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.Request request = chain.request();
+			okhttp3.HttpUrl local = request.url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(request.newBuilder().url(local).build());
+		}).build();
+	}
+
 	@Test public void injectedOkHttpUploadsExplicitCaptureOnly() throws Exception
 	{
 		String msg = FederationBanUploadClient.send(
-			snapshot(), base(), "test_officer_credential_minimum_24_chars", new OkHttpClient());
+			snapshot(), base(), "test_officer_credential_minimum_24_chars", testHttp());
 		assertTrue(msg.contains("Synced 2 bans"));
 		assertEquals("Bearer test_officer_credential_minimum_24_chars",
 					 capturedAuthorization.get());
@@ -109,7 +119,7 @@ public class FederationBanOkHttpTest
 			"\"revision\":4,\"removed_bans\":10,\"new_bans\":[]}";
 		FederationBanUploadClient.Receipt ack = FederationBanUploadClient.sendReceipt(
 			snapshot(),base(),"test_officer_credential_minimum_24_chars",
-			new OkHttpClient());
+			testHttp());
 		assertEquals(4,ack.revision);
 		assertTrue("Admins must see that previously banned players were removed",
 			ack.message.contains("Removed 10"));
@@ -124,7 +134,7 @@ public class FederationBanOkHttpTest
 		try
 		{
 			FederationBanUploadClient.send(
-				snapshot(), base(), "test_officer_credential_minimum_24_chars", new OkHttpClient());
+				snapshot(), base(), "test_officer_credential_minimum_24_chars", testHttp());
 			fail("Rate-limited uploads must not claim success");
 		}
 		catch (IOException expected)
@@ -142,7 +152,7 @@ public class FederationBanOkHttpTest
 		try
 		{
 			FederationBanUploadClient.send(
-				snapshot(), base(), "test_officer_credential_minimum_24_chars", new OkHttpClient());
+				snapshot(), base(), "test_officer_credential_minimum_24_chars", testHttp());
 			fail("Redirect must be rejected without forwarding credentials");
 		}
 		catch (IOException expected)
@@ -158,7 +168,7 @@ public class FederationBanOkHttpTest
 		try
 		{
 			FederationBanUploadClient.send(
-				snapshot(), base(), "test_officer_credential_minimum_24_chars", new OkHttpClient());
+				snapshot(), base(), "test_officer_credential_minimum_24_chars", testHttp());
 			fail("Oversized server response should be rejected");
 		}
 		catch (IOException expected)
@@ -173,7 +183,7 @@ public class FederationBanOkHttpTest
 		{
 			FederationBanUploadClient.send(snapshot(), "http://127.0.0.1:8123",
 										   "test_officer_credential_minimum_24_chars",
-										   new OkHttpClient());
+										   testHttp());
 			fail("Unapproved origin should fail before network call");
 		}
 		catch (IllegalArgumentException expected)

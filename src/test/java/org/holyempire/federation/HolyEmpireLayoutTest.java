@@ -137,7 +137,7 @@ public class HolyEmpireLayoutTest
 	{
 		final FederationPanel[] panel = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> panel[0] = new FederationPanel());
-		panel[0].setPreviewUnverifiedScreen(true);
+		panel[0].showNotVerified();
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {
 			JButton join = (JButton)named(panel[0], "holyEmpireJoinHere");
@@ -158,8 +158,6 @@ public class HolyEmpireLayoutTest
 				(JLabel)((BorderLayout)panel[0].getLayout()).getLayoutComponent(BorderLayout.SOUTH);
 			assertFalse(footer.isVisible());
 		});
-		panel[0].setPreviewUnverifiedScreen(false);
-		SwingUtilities.invokeAndWait(() -> {});
 		panel[0].showNotVerified();
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {

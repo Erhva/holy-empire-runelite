@@ -371,8 +371,6 @@ public class FederationPanel extends PluginPanel
 		});
 	}
 
-	private HolyEmpireViewPreview viewPreview = HolyEmpireViewPreview.LIVE;
-	private final JLabel viewPreviewLabel = SwingTextSafety.plainLabel("");
 	private volatile boolean adminEligibleRequested;
 	private boolean adminEligible;
 	private String communicationsError;
@@ -843,77 +841,40 @@ public class FederationPanel extends PluginPanel
 		emergencyAction = handler;
 	}
 
-	/** UI preview only: real permissions and server credentials are unchanged. */
-	void setViewPreview(HolyEmpireViewPreview mode)
-	{
-		final HolyEmpireViewPreview next = mode == null ? HolyEmpireViewPreview.LIVE : mode;
-		SwingUtilities.invokeLater(() -> {
-			if (viewPreview == next)
-				return;
-			viewPreview = next;
-			if (next.isPreview())
-				selectedBanChapter = null;
-			if (next.showsNonMember())
-			{
-				showingAnnouncements = false;
-				showingAdmin = false;
-				showingEvents = false;
-				showingBans = false;
-				selectedChapter = null;
-			}
-			else if (next.isPreview() && ((showingBans && !next.showsBanList()) ||
-										  (showingAdmin && !next.showsEmpireControls())))
-			{
-				showingBans = false;
-				showingAdmin = false;
-				showingAnnouncements = true;
-			}
-			refresh();
-		});
-	}
-
-	private boolean previewing()
-	{
-		return viewPreview.isPreview();
-	}
-
 	private boolean viewingMember()
 	{
-		return previewing() ? !viewPreview.showsNonMember() : verified;
+		return verified;
 	}
 
 	private boolean viewingOfficer()
 	{
-		return previewing() ? viewPreview.canSearchGlobalBans()
-							: officerSettingsEligible || globalBanSearchEligible;
+		return officerSettingsEligible || globalBanSearchEligible;
 	}
 
 	private boolean viewingEmpireOwner()
 	{
-		// Admin Controls includes announcement-only Deputy Owners and Primarchs.
-		return previewing() ? viewPreview.canCreateAnnouncements() : adminEligible;
+		return adminEligible;
 	}
 
 	private boolean viewingAttendance()
 	{
-		return previewing() ? viewPreview.canCreateAnnouncements() : attendanceEligible;
+		return attendanceEligible;
 	}
 
 	private boolean viewingEventAttendance()
 	{
-		// Creators are allowed even if they are not chapter admins; server
-		// resolves creator identity and chapter role on each claimed event.
+		// Creators may take attendance subject to server-side chapter authorization.
 		return verified && discordSessionReady != null && discordSessionReady.getAsBoolean();
 	}
 
 	private boolean viewingChapterBanLists()
 	{
-		return previewing() ? viewPreview.canViewChapterBanLists() : officerSettingsEligible;
+		return officerSettingsEligible;
 	}
 
 	private boolean viewingBroadcasts()
 	{
-		return previewing() ? viewPreview.canBroadcast() : broadcastEligible;
+		return broadcastEligible;
 	}
 
 	private volatile boolean broadcastEligible;
@@ -997,8 +958,7 @@ public class FederationPanel extends PluginPanel
 
 	private void updateEmergencyTickerVisibility()
 	{
-		boolean canShow = emergencyTickerEnabled && confirmedMember && verified && !denied && !previewUnverifiedScreen &&
-						  !viewPreview.showsNonMember();
+		boolean canShow = emergencyTickerEnabled && confirmedMember && verified && !denied;
 		emergencyTicker.setWarning(canShow && communications != null ? communications.emergency
 																	 : null);
 	}
@@ -1190,7 +1150,6 @@ public class FederationPanel extends PluginPanel
 	private void clearChapterEventAccess()
 	{
 		// Roster synchronization is enough to request events from the backend.
-		// Isolated Test Mode uses a separate preview key, not a Discord code.
 		eventMemberConnected = !activeEventChapter.isEmpty();
 		chapterEventsLoading = false;
 		chapterEventsLastAttemptAt = 0;
@@ -1595,7 +1554,6 @@ public class FederationPanel extends PluginPanel
 	private final JLabel status = new JLabel("Log in to load Holy Empire.");
 	private volatile boolean verified = false;
 	private boolean denied = false;
-	private boolean previewUnverifiedScreen = false;
 	private static final String DENIAL_MESSAGE =
 		"Only verified members of the Holy Empire may access this plugin.";
 	private static final String JOIN_INSTRUCTIONS =
@@ -1752,13 +1710,6 @@ public class FederationPanel extends PluginPanel
 			new Dimension(Integer.MAX_VALUE, empireName.getPreferredSize().height));
 		empireBanner.setName("holyEmpireBrandHeader");
 		top.add(empireBanner);
-		viewPreviewLabel.setName("holyEmpireDeveloperViewPreview");
-		viewPreviewLabel.setForeground(HolyEmpireTheme.BLUE);
-		viewPreviewLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		viewPreviewLabel.setAlignmentX(CENTER_ALIGNMENT);
-		viewPreviewLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-		viewPreviewLabel.setBorder(BorderFactory.createEmptyBorder(5, 4, 5, 4));
-		top.add(viewPreviewLabel);
 		emergencyTicker.setAlignmentX(Component.CENTER_ALIGNMENT);
 		top.add(emergencyTicker);
 		rosterTab.setName("holyEmpireRosterTab");
@@ -1773,8 +1724,7 @@ public class FederationPanel extends PluginPanel
 		discordVerifyButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
 		discordVerifyButton.setRequestFocusEnabled(false);
 		discordVerifyButton.addActionListener(e -> {
-			if (!previewing() && discordConnectAction != null && verified &&
-				!previewUnverifiedScreen &&
+			if (discordConnectAction != null && verified &&
 				(discordSessionReady == null || !discordSessionReady.getAsBoolean()))
 				discordConnectAction.run();
 		});
@@ -1919,8 +1869,7 @@ public class FederationPanel extends PluginPanel
 			// One-hour bearer expiry can occur without a panel navigation;
 			// update the verification control without rebuilding the page.
 			boolean showVerify =
-				!previewing() && verified && !previewUnverifiedScreen &&
-				discordConnectAction != null &&
+				verified && discordConnectAction != null &&
 				(discordSessionReady == null || !discordSessionReady.getAsBoolean());
 			if (discordVerifyButton.isVisible() != showVerify)
 			{
@@ -1934,7 +1883,7 @@ public class FederationPanel extends PluginPanel
 				banDirectoryCachedAt = 0;
 				cachedBanCounts = Collections.emptyMap();
 				sortedBanEntries = Collections.emptyList();
-				if (verified && officerSettingsEligible && !previewing())
+				if (verified && officerSettingsEligible )
 				{
 					requestBanDirectory(false);
 				}
@@ -1968,7 +1917,7 @@ public class FederationPanel extends PluginPanel
 						if (attendance != null && !trackingEvent(ev.id))
 						{
 							boolean eligible = eventAttendanceWindow(ev.start, ev.end, now);
-							attendance.setEnabled(!previewing() && eligible &&
+							attendance.setEnabled(eligible &&
 								(attendanceReport == null || attendanceSaved));
 							attendance.setToolTipText(!eligible
 								? "Attendance tracking becomes available 1 hour before the event starts."
@@ -2168,23 +2117,6 @@ public class FederationPanel extends PluginPanel
 		eventsHeader.setOpaque(false);
 		eventsHeader.setPreferredSize(new Dimension(0, 0));
 		headerCards.add(eventsHeader, "events");
-	}
-
-	/** UI-only preview: never grants or revokes actual membership eligibility. */
-	public void setPreviewUnverifiedScreen(boolean enabled)
-	{
-		SwingUtilities.invokeLater(() -> {
-			if (previewUnverifiedScreen == enabled)
-			{
-				return;
-			}
-			previewUnverifiedScreen = enabled;
-			if (enabled)
-			{
-				selectedChapter = null;
-			}
-			refresh();
-		});
 	}
 
 	public void showMessage(String message)
@@ -2418,7 +2350,7 @@ public class FederationPanel extends PluginPanel
 
 	private void showUnavailable()
 	{
-		if (denied || previewUnverifiedScreen || viewPreview.showsNonMember())
+		if (denied)
 		{
 			JTextArea notice = new JTextArea(DENIAL_MESSAGE);
 			notice.setName("holyEmpireAccessDenied");
@@ -2715,7 +2647,7 @@ public class FederationPanel extends PluginPanel
 		row.add(metadata, BorderLayout.SOUTH);
 		// Only the matching chapter's currently authorized officer may clear.
 		// The entry stays banned; this only removes private annotation fields.
-		if (!previewing() && verified && officerSettingsEligible &&
+		if (verified && officerSettingsEligible &&
 			banDirectory != null && banReasonClearAction != null &&
 			!entry.category.isEmpty() && banReasonClearAuthorized.test(entry))
 		{
@@ -3342,7 +3274,7 @@ public class FederationPanel extends PluginPanel
 			attendance.setName("holyEmpireEventAttendance:" + event.id);
 			attendance.setAlignmentX(LEFT_ALIGNMENT);
 			attendance.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-			attendance.setEnabled(!previewing() && (trackingThis || attendanceWindow) &&
+			attendance.setEnabled((trackingThis || attendanceWindow) &&
 								  (trackingThis || attendanceReport == null || attendanceSaved));
 			attendance.setToolTipText(!trackingThis && !attendanceWindow
 				? "Attendance tracking becomes available 1 hour before the event starts."
@@ -3562,7 +3494,7 @@ public class FederationPanel extends PluginPanel
 			author.setAlignmentX(LEFT_ALIGNMENT);
 			author.setBorder(BorderFactory.createEmptyBorder(5, 0, 1, 0));
 			card.add(author);
-			if (notice.canManage && !previewing() && discordSessionReady != null &&
+			if (notice.canManage && discordSessionReady != null &&
 				discordSessionReady.getAsBoolean())
 				addInlineAnnouncementControls(card, notice);
 			card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
@@ -3726,10 +3658,10 @@ public class FederationPanel extends PluginPanel
 		submit.setAlignmentX(LEFT_ALIGNMENT);
 		java.util.function.BooleanSupplier canPublish =
 			"announcement".equals(kind) ? ownerSessionReady : broadcastSessionReady;
-		submit.setEnabled(!previewing() && canPublish != null && canPublish.getAsBoolean() &&
+		submit.setEnabled(canPublish != null && canPublish.getAsBoolean() &&
 						  publishAction != null);
 		submit.addActionListener(e -> {
-			if (previewing() || publishAction == null || canPublish == null ||
+			if (publishAction == null || canPublish == null ||
 				!canPublish.getAsBoolean())
 				return;
 			String subject = title.getText().trim();
@@ -3785,7 +3717,7 @@ public class FederationPanel extends PluginPanel
 
 	private void editAnnouncement(EmpireCommunicationsClient.Notice notice)
 	{
-		if (previewing() || manageAnnouncementAction == null || !notice.canManage ||
+		if (manageAnnouncementAction == null || !notice.canManage ||
 			discordSessionReady == null || !discordSessionReady.getAsBoolean())
 			return;
 		JTextField title = new JTextField(notice.title);
@@ -3823,7 +3755,7 @@ public class FederationPanel extends PluginPanel
 
 	private void removeAnnouncement(EmpireCommunicationsClient.Notice notice)
 	{
-		if (previewing() || manageAnnouncementAction == null || !notice.canManage ||
+		if (manageAnnouncementAction == null || !notice.canManage ||
 			discordSessionReady == null || !discordSessionReady.getAsBoolean())
 			return;
 		if (JOptionPane.showConfirmDialog(
@@ -3853,7 +3785,7 @@ public class FederationPanel extends PluginPanel
 		actions.setOpaque(false);
 		actions.setAlignmentX(LEFT_ALIGNMENT);
 		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 86));
-		boolean enabled = !previewing() && broadcastSessionReady != null &&
+		boolean enabled = broadcastSessionReady != null &&
 						  broadcastSessionReady.getAsBoolean() && emergencyAction != null;
 		JButton end = HolyEmpireTheme.button("End Emergency", true);
 		end.setName("holyEmpireEndEmergency");
@@ -3905,7 +3837,7 @@ public class FederationPanel extends PluginPanel
 			addAligned(SwingTextSafety.plainLabel("No announcements to edit or remove."));
 			return;
 		}
-		boolean ready = !previewing() && ownerSessionReady != null &&
+		boolean ready = ownerSessionReady != null &&
 						ownerSessionReady.getAsBoolean() && manageAnnouncementAction != null;
 		for (EmpireCommunicationsClient.Notice notice : communications.announcements)
 		{
@@ -4011,8 +3943,7 @@ public class FederationPanel extends PluginPanel
 			addAligned(attendanceTitle);
 			JButton begin = HolyEmpireTheme.button("Start Attendance", false);
 			begin.setName("holyEmpireAttendanceStartManual");
-			begin.setEnabled(attendanceStart != null && viewingAttendance() && !previewing() &&
-							 (attendanceReport == null || !attendanceReport.running));
+			begin.setEnabled(attendanceStart != null && viewingAttendance() && (attendanceReport == null || !attendanceReport.running));
 			begin.addActionListener(e -> {
 				String title = attendanceTitle.getText().trim();
 				if (title.isEmpty())
@@ -4109,7 +4040,7 @@ public class FederationPanel extends PluginPanel
 				report.paused ? "Resume Attendance" : "Pause Attendance", false);
 			pause.setName(report.paused ? "holyEmpireAttendanceResume"
 										: "holyEmpireAttendancePause");
-			pause.setEnabled(!previewing() && attendancePause != null);
+			pause.setEnabled(attendancePause != null);
 			pause.addActionListener(e -> attendancePause.run());
 			addAligned(pause);
 		}
@@ -4232,8 +4163,7 @@ public class FederationPanel extends PluginPanel
 		// BoxLayout excludes hidden components from its preferred height.
 		// GridLayout allocated rows even for invisible tabs and left a huge
 		// gap above the sole Attendance control during authorization refreshes.
-		// Keep all components present so role-preview tests can still inspect
-		// their explicit visibility, but never reserve room for hidden tabs.
+		// Keep section controls present, but do not reserve space for hidden tabs.
 		adminAttendanceTab.setVisible(attendanceAllowed);
 		adminAnnouncementsTab.setVisible(announcementAllowed);
 		adminBroadcastsTab.setVisible(broadcastsAllowed);
@@ -4302,7 +4232,7 @@ public class FederationPanel extends PluginPanel
 		{
 			heading("Global Ban Search", 17);
 			JTextField query = new JTextField();
-			query.setName("holyEmpirePreviewGlobalBanSearch");
+			query.setName("holyEmpireGlobalBanSearch");
 			query.putClientProperty("JTextField.placeholderText", "Search the global ban list");
 			query.setEnabled(false);
 			HolyEmpireTheme.styleSearch(query);
@@ -4312,33 +4242,8 @@ public class FederationPanel extends PluginPanel
 									+ "chapter ban lists, full exports, and ban synchronization "
 									+ "are restricted. A server-authorized search-only connection "
 									+ "is required; individual chapter records are never loaded."));
-			setStatus(previewing() ? "Chapter Admin preview" : "Chapter Admin",
+			setStatus("Chapter Admin",
 					  "Global ban search only");
-			return;
-		}
-		if (previewing())
-		{
-			heading("Chapter Ban-Lists", 17);
-			JButton previewRefresh = HolyEmpireTheme.button("Refresh ban list", true);
-			previewRefresh.setName("holyEmpireBanRefresh");
-			previewRefresh.setEnabled(false);
-			previewRefresh.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-			addAligned(previewRefresh);
-			addAligned(readableText("PREVIEW ONLY — private ban records and synchronization "
-									+ "remain inaccessible. No actual permissions have changed."));
-			heading("Combined chapter ban lists", 15);
-			JLabel syncPreview = SwingTextSafety.plainLabel(
-				"Ban synchronization permitted for this rank (preview only).");
-			syncPreview.setName("holyEmpirePreviewSyncPermissions");
-			syncPreview.setForeground(HolyEmpireTheme.MUTED);
-			addAligned(syncPreview);
-			for (HolyEmpireChapterCatalog.Chapter chapter : HolyEmpireChapterCatalog.ORDERED)
-			{
-				JLabel label = SwingTextSafety.plainLabel(chapter.name + " — private");
-				label.setForeground(HolyEmpireTheme.MUTED);
-				addAligned(label);
-			}
-			setStatus("Developer preview", "Private bans hidden");
 			return;
 		}
 		JButton refreshBans = HolyEmpireTheme.button(
@@ -4520,10 +4425,7 @@ public class FederationPanel extends PluginPanel
 			: viewport == null ? null : viewport.getViewPosition();
 		content.removeAll();
 		updateEmergencyTickerVisibility();
-		boolean unverified = !viewingMember() || previewUnverifiedScreen;
-		viewPreviewLabel.setVisible(previewing());
-		if (previewing())
-			viewPreviewLabel.setText("TEST VIEW: " + viewPreview + " (UI only)");
+		boolean unverified = !viewingMember();
 		if (!viewingChapterBanLists() && banDirectory != null)
 		{
 			clearPrivateBanDirectory();
@@ -4586,7 +4488,7 @@ public class FederationPanel extends PluginPanel
 		bansLayout.insets = new Insets(1, 2, 2, 0);
 		tabGrid.setConstraints(banListTab, bansLayout);
 		// The sole verification control is located below every navigation tab.
-		boolean showVerify = !previewing() && !unverified && discordConnectAction != null &&
+		boolean showVerify = !unverified && discordConnectAction != null &&
 							 (discordSessionReady == null || !discordSessionReady.getAsBoolean());
 		discordVerifyButton.setVisible(showVerify);
 		GridBagConstraints verificationLayout = new GridBagConstraints();
@@ -4620,7 +4522,7 @@ public class FederationPanel extends PluginPanel
 		headerCards.setPreferredSize(new Dimension(0, activeHeight));
 		// While membership is being checked, the main content already contains
 		// the loading text. Showing the footer would duplicate that message.
-		status.setVisible(viewingMember() && !denied && !previewUnverifiedScreen && !previewing());
+		status.setVisible(viewingMember() && !denied  );
 		if (unverified)
 		{
 			showUnavailable();

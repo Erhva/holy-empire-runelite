@@ -90,7 +90,7 @@ public class HolyEmpireMemberExperienceTest
 		});
 	}
 
-	@Test public void developerPreviewHidesAndRestoresWithoutChangingVerification() throws Exception
+	@Test public void actualMembershipLossAndRecoveryRebuildsNavigation() throws Exception
 	{
 		final FederationPanel[] ref = new FederationPanel[1];
 		SwingUtilities.invokeAndWait(() -> ref[0] = new FederationPanel());
@@ -100,14 +100,14 @@ public class HolyEmpireMemberExperienceTest
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {
 			assertNotNull(named(ref[0], "holyEmpireChapter:Holy Empire"));
-			ref[0].setPreviewUnverifiedScreen(true);
+			ref[0].showNotVerified();
 		});
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {
 			assertNotNull(named(ref[0], "holyEmpireAccessDenied"));
 			assertNotNull(named(ref[0], "holyEmpireJoinHere"));
 			assertNull(named(ref[0], "holyEmpireChapter:Holy Empire"));
-			ref[0].setPreviewUnverifiedScreen(false);
+			ref[0].update(member, Collections.emptyMap());
 		});
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {

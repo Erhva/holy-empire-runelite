@@ -100,12 +100,7 @@ final class EventImageLoader
 			return false;
 		}
 		String suffix = "/v2/event-images/" + eventId + "/(?:a_)?[0-9a-f]{32}[.]png";
-		if (url.matches(java.util.regex.Pattern.quote(PUBLIC_ORIGIN) + suffix))
-		{
-			return true;
-		}
-		return ChapterEventsClient.isDevTestMode() &&
-			url.matches(java.util.regex.Pattern.quote(ChapterEventsClient.origin()) + suffix);
+		return url.matches(java.util.regex.Pattern.quote(PUBLIC_ORIGIN) + suffix);
 	}
 
 	private static String cacheKey(String url, String bearer)
@@ -148,13 +143,7 @@ final class EventImageLoader
 			{
 				throw new IOException("Public image must be on Holy Empire R2");
 			}
-			String bearer = null;
-			if (ChapterEventsClient.isDevTestMode() &&
-				event.imageUrl.startsWith(ChapterEventsClient.origin() + "/"))
-			{
-				bearer = ChapterEventsClient.devPreviewCredential();
-			}
-			return new ImageSource(event.imageUrl, bearer, cacheKey(event.imageUrl, bearer));
+			return new ImageSource(event.imageUrl, null, cacheKey(event.imageUrl, null));
 		}
 		if (!"chapter".equals(event.scope) || !event.id.matches("[0-9a-f]{32}") ||
 			event.imageUrl.isEmpty())
@@ -171,10 +160,6 @@ final class EventImageLoader
 		if (member != null && member.valid(event.chapter))
 		{
 			bearer = member.token;
-		}
-		else if (ChapterEventsClient.isDevTestMode())
-		{
-			bearer = ChapterEventsClient.devPreviewCredential();
 		}
 		else
 		{

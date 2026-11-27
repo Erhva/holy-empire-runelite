@@ -120,7 +120,7 @@ public class CentralRosterClientTest
 
 	private String base()
 	{
-		return "http://127.0.0.1:" + server.getAddress().getPort();
+		return "https://roster.holyempireosrs.cc";
 	}
 
 	@After public void stop()
@@ -153,12 +153,22 @@ public class CentralRosterClientTest
 		manifest = header.toString();
 	}
 
+	/** Redirect only injected test-client traffic to the local fixture. */
+	private OkHttpClient fixtureHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.HttpUrl url = chain.request().url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(chain.request().newBuilder().url(url).build());
+		}).build();
+	}
+
 	@Test
 	public void verifiedWarningFeedNeverWarnsRegularMemberAboutRosteredNames() throws Exception
 	{
 		addWarningFixture("Outside", "test0");
 		WomDirectoryClient.Snapshot snapshot =
-			CentralRosterClient.fetch(base(), new OkHttpClient());
+			CentralRosterClient.fetch(base(), fixtureHttp());
 		assertTrue(snapshot.publicBanStatusAvailable);
 		assertTrue(FederationPublicBanWarnings.matches("Outside", snapshot.publicBanHashes,
 													   snapshot.members));
@@ -171,7 +181,7 @@ public class CentralRosterClientTest
 		addWarningFixture("Outside");
 		warningCompressed[warningCompressed.length - 1] ^= 1;
 		WomDirectoryClient.Snapshot snapshot =
-			CentralRosterClient.fetch(base(), new OkHttpClient());
+			CentralRosterClient.fetch(base(), fixtureHttp());
 		assertFalse(snapshot.publicBanStatusAvailable);
 		assertTrue(snapshot.eligible("test0"));
 	}
@@ -179,7 +189,7 @@ public class CentralRosterClientTest
 	@Test public void fetchesAllGroupsFromOneManifest() throws Exception
 	{
 		WomDirectoryClient.Snapshot snapshot =
-			CentralRosterClient.fetch(base(), new OkHttpClient());
+			CentralRosterClient.fetch(base(), fixtureHttp());
 		assertTrue(snapshot.eligible("test0"));
 		assertTrue(snapshot.eligible("test15"));
 		assertEquals(16, snapshot.chapters.size());
@@ -191,7 +201,7 @@ public class CentralRosterClientTest
 		compressed[compressed.length - 1] ^= 1;
 		try
 		{
-			CentralRosterClient.fetch(base(), new OkHttpClient());
+			CentralRosterClient.fetch(base(), fixtureHttp());
 			fail("Expected checksum mismatch");
 		}
 		catch (IOException expected)
@@ -205,7 +215,7 @@ public class CentralRosterClientTest
 		makeFixture(now - 2 * 24 * 3600, WomDirectoryClient.GROUPS.length);
 		try
 		{
-			CentralRosterClient.fetch(base(), new OkHttpClient());
+			CentralRosterClient.fetch(base(), fixtureHttp());
 			fail("Must reject stale manifest");
 		}
 		catch (IOException expected)
@@ -219,7 +229,7 @@ public class CentralRosterClientTest
 		makeFixture(now, 15);
 		try
 		{
-			CentralRosterClient.fetch(base(), new OkHttpClient());
+			CentralRosterClient.fetch(base(), fixtureHttp());
 			fail("Missing group must fail");
 		}
 		catch (IOException expected)
@@ -232,7 +242,7 @@ public class CentralRosterClientTest
 	{
 		try
 		{
-			CentralRosterClient.fetch("http://192.168.140.13:8765", new OkHttpClient());
+			CentralRosterClient.fetch("http://192.168.140.13:8765", fixtureHttp());
 			fail("HTTPS required");
 		}
 		catch (IOException expected)
@@ -245,7 +255,7 @@ public class CentralRosterClientTest
 	{
 		try
 		{
-			CentralRosterClient.fetch("https://user:password@example.org", new OkHttpClient());
+			CentralRosterClient.fetch("https://user:password@example.org", fixtureHttp());
 			fail("URL credentials rejected");
 		}
 		catch (IOException expected)

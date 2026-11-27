@@ -182,23 +182,11 @@ final class DiscordEventsClient
 								   .connectTimeout(5, TimeUnit.SECONDS)
 								   .readTimeout(8, TimeUnit.SECONDS)
 								   .build();
-		final boolean test = ChapterEventsClient.isDevTestMode();
-		final String origin = test ? ChapterEventsClient.origin() : "";
-		if (test && ChapterEventsClient.BASE.equals(origin))
-		{
-			throw new IOException("Developer test calendar origin required");
-		}
 		Request.Builder builder = new Request.Builder()
-									  .url(test ? origin + "/v2/events.json" : URL)
+									  .url(URL)
 									  .get()
 									  .header("Accept", "application/json")
 									  .header("User-Agent", "HolyEmpire-RuneLite-Events/1.0");
-		if (test)
-		{
-			// Only the isolated developer client can access the Test key.
-			// Redirects and arbitrary origin configuration are forbidden.
-			builder.header("Authorization", "Bearer " + ChapterEventsClient.devPreviewCredential());
-		}
 		Request request = builder.build();
 		try (Response response = bounded.newCall(request).execute())
 		{
@@ -226,7 +214,7 @@ final class DiscordEventsClient
 				throw new IOException("Events feed exceeds limit");
 			}
 			return parse(new String(payload, java.nio.charset.StandardCharsets.UTF_8),
-						 Instant.now(), test ? "293070715706671104" : null);
+						 Instant.now(), null);
 		}
 	}
 
@@ -300,24 +288,9 @@ final class DiscordEventsClient
 						!item.get("image_url").getAsJsonPrimitive().isString())
 						throw new IOException("Invalid Empire scheduled-event image");
 					cover = item.get("image_url").getAsString();
-					boolean firstParty = EventImageLoader.approvedPublicUrl(cover, id);
-					// The isolated preview feed still stores Discord's original
-					// metadata, but no RuneLite image request ever uses that URL.
-					boolean testMetadata =
-						ChapterEventsClient.isDevTestMode() &&
-						cover.matches("https://cdn[.]discordapp[.]com/guild-events/" +
-									  java.util.regex.Pattern.quote(id) +
-									  "/(?:a_)?[0-9a-f]{32}[.]png");
-					if (!firstParty && !testMetadata)
+					if (!EventImageLoader.approvedPublicUrl(cover, id))
 					{
 						throw new IOException("Unexpected Empire event cover image");
-					}
-					if (testMetadata)
-					{
-						String hash =
-							cover.substring(cover.lastIndexOf('/') + 1, cover.length() - 4);
-						cover = ChapterEventsClient.origin() + "/v2/event-images/" + id + "/" +
-								hash + ".png";
 					}
 				}
 				int interested = -1;

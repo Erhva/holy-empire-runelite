@@ -623,24 +623,6 @@ public interface FederationConfig extends Config {
 		return "Holy Chaos";
 	}
 
-	@ConfigSection(name = "Developer: Test Views",
-				   description =
-					   "UI-only rank and membership previews for developer RuneLite sessions. "
-					   + "Never changes real Discord roles, RuneScape rank, or server permissions.",
-				   position = 6, closedByDefault = true)
-	String developerViewsSection = "developerViewsSection";
-
-	@ConfigItem(keyName = "testViewPreview", name = "Preview a member rank",
-				description = "Preview Member, Chapter Admin, Deputy Owner, Primarch "
-							  + "(Chapter Owner), High Lord, Emperor, or an outsider. "
-							  + "Only active in authorized developer instances. "
-							  + "Selecting a role NEVER grants access to private data or actions.",
-				position = 0, section = developerViewsSection)
-	default HolyEmpireViewPreview
-	testViewPreview()
-	{
-		return HolyEmpireViewPreview.LIVE;
-	}
 
 	@ConfigItem(keyName = "banSyncEndpoint", name = "Protected sync endpoint",
 				description = "HTTPS URL of the privately authenticated central ban registry "

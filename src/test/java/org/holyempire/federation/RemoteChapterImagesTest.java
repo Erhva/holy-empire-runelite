@@ -32,7 +32,6 @@ public class RemoteChapterImagesTest
 {
 	@Rule public TemporaryFolder temp = new TemporaryFolder();
 	private HttpServer server;
-	private String previousProperty;
 	private final AtomicInteger requests = new AtomicInteger();
 
 	private static String digest(byte[] bytes) throws Exception
@@ -85,9 +84,6 @@ public class RemoteChapterImagesTest
 			}
 		});
 		server.start();
-		previousProperty = System.getProperty("holyempire.rosterBaseUrl");
-		System.setProperty("holyempire.rosterBaseUrl",
-						   "http://127.0.0.1:" + server.getAddress().getPort());
 	}
 
 	private Filepath cache()
@@ -99,18 +95,21 @@ public class RemoteChapterImagesTest
 	@After public void cleanup()
 	{
 		HolyEmpireAssets.useRemoteChapterImages(null);
-		if (previousProperty == null)
-		{
-			System.clearProperty("holyempire.rosterBaseUrl");
-		}
-		else
-		{
-			System.setProperty("holyempire.rosterBaseUrl", previousProperty);
-		}
 		if (server != null)
 		{
 			server.stop(0);
 		}
+	}
+
+	/** Route only test HTTP traffic to the local fixture server. Production URLs remain pinned. */
+	private OkHttpClient testHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.Request request = chain.request();
+			okhttp3.HttpUrl local = request.url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(request.newBuilder().url(local).build());
+		}).build();
 	}
 
 	@Test public void fetchesExactlyOnceAndSurvivesRestartWithoutHttp() throws Exception
@@ -118,7 +117,7 @@ public class RemoteChapterImagesTest
 		byte[] png = bundled("holy-empire");
 		String sha = digest(png);
 		startServer(png, "image/png", 200);
-		RemoteChapterImages first = new RemoteChapterImages(new OkHttpClient(), cache());
+		RemoteChapterImages first = new RemoteChapterImages(testHttp(), cache());
 		first.useDirectory(directoryWithDigest(sha));
 		assertNull(first.iconForHash(sha));
 		assertTrue(first.loadMissing());
@@ -127,7 +126,7 @@ public class RemoteChapterImagesTest
 		assertFalse(first.loadMissing());
 		assertEquals(1, requests.get());
 
-		RemoteChapterImages afterRestart = new RemoteChapterImages(new OkHttpClient(), cache());
+		RemoteChapterImages afterRestart = new RemoteChapterImages(testHttp(), cache());
 		afterRestart.useDirectory(directoryWithDigest(sha));
 		assertTrue(afterRestart.loadMissing());
 		assertEquals(1, requests.get()); // Retrieved from verified on-disk cache.
@@ -141,7 +140,7 @@ public class RemoteChapterImagesTest
 		byte[] substituted = bundled("holy-chaos");
 		String sha = digest(correct);
 		startServer(substituted, "image/png", 200);
-		RemoteChapterImages images = new RemoteChapterImages(new OkHttpClient(), cache());
+		RemoteChapterImages images = new RemoteChapterImages(testHttp(), cache());
 		images.useDirectory(directoryWithDigest(sha));
 		assertFalse(images.loadMissing());
 		assertNull(images.iconForHash(sha));
@@ -158,7 +157,7 @@ public class RemoteChapterImagesTest
 		byte[] png = bundled("holy-empire");
 		String sha = digest(png);
 		startServer(png, "image/png", 302);
-		RemoteChapterImages images = new RemoteChapterImages(new OkHttpClient(), cache());
+		RemoteChapterImages images = new RemoteChapterImages(testHttp(), cache());
 		images.useDirectory(directoryWithDigest(sha));
 		assertFalse(images.loadMissing());
 		assertEquals(1, requests.get());
@@ -176,11 +175,11 @@ public class RemoteChapterImagesTest
 		}
 	}
 
-	@Test public void networkHostsAreFixedToOwnDomainAndLoopbackForTests() throws Exception
+	@Test public void networkHostsAreFixedToOwnDomainOnly() throws Exception
 	{
 		assertTrue(RemoteChapterImages.isAllowedImageOrigin(
 			new java.net.URL("https://roster.holyempireosrs.cc/v2/icons/test.png")));
-		assertTrue(RemoteChapterImages.isAllowedImageOrigin(
+		assertFalse(RemoteChapterImages.isAllowedImageOrigin(
 			new java.net.URL("http://127.0.0.1:9000/v2/icons/test.png")));
 		assertFalse(RemoteChapterImages.isAllowedImageOrigin(
 			new java.net.URL("https://example.org/v2/icons/test.png")));

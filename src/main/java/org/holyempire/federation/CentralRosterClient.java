@@ -64,9 +64,7 @@ final class CentralRosterClient
 			throw new IOException("Invalid central roster URL");
 		}
 		String protocol = uri.getScheme();
-		boolean local =
-			"localhost".equalsIgnoreCase(uri.getHost()) || "127.0.0.1".equals(uri.getHost());
-		if (!"https".equalsIgnoreCase(protocol) && !(local && "http".equalsIgnoreCase(protocol)))
+		if (!"https".equalsIgnoreCase(protocol))
 		{
 			throw new IOException("Central roster requires HTTPS");
 		}

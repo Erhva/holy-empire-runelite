@@ -130,79 +130,16 @@ public class ChapterEventsClientTest
 		assertEquals("", compatible.myRsvp);
 	}
 
-	@Test public void testOriginRequiresIsolatedDevHomeAndExactGuild()
+	@Test public void productionChapterOriginIsPinned()
 	{
-		String[] keys = {"user.home",
-						 "jagex.userhome",
-						 "holyempire.dev.testMasterAccess",
-						 "holyempire.dev.chapterEventsTestGuild",
-						 "holyempire.dev.chapterEventsTestChapter",
-						 "holyempire.dev.chapterEventsTestOrigin"};
-		String[] originals = new String[keys.length];
-		for (int i = 0; i < keys.length; i++)
-		{
-			originals[i] = System.getProperty(keys[i]);
-		}
-		try
-		{
-			String domain = "https://informal-leone-decorating-venue.trycloudflare.com";
-			System.setProperty("holyempire.dev.chapterEventsTestOrigin", domain);
-			System.setProperty("holyempire.dev.chapterEventsTestGuild", "293070715706671104");
-			System.setProperty("holyempire.dev.chapterEventsTestChapter", "Holy Chaos");
-			System.setProperty("holyempire.dev.testMasterAccess", "true");
-
-			// A normal production RuneLite home MUST ignore the test origin.
-			System.setProperty("user.home", "/home/player");
-			System.setProperty("jagex.userhome", "/home/player");
-			assertFalse(ChapterEventsClient.isDevTestMode());
-			assertEquals(ChapterEventsClient.BASE, ChapterEventsClient.origin());
-			assertEquals("", ChapterEventsClient.testChapter());
-			assertFalse(ChapterEventsClient.acceptedChapterOrigin(domain));
-
-			System.setProperty("user.home", "/tmp/holy-empire-runelite-test/home");
-			// RuneLite overwrites this property at startup.
-			System.setProperty("jagex.userhome", "/tmp/holy-empire-runelite-test/home");
-			assertFalse("Wrong Jagex directory must fail closed",
-						ChapterEventsClient.isDevTestMode());
-			System.setProperty("jagex.userhome", "/tmp/holy-empire-runelite-test/home/.runelite");
-			assertTrue(ChapterEventsClient.isDevTestMode());
-			assertEquals(domain, ChapterEventsClient.origin());
-			assertEquals("Holy Chaos", ChapterEventsClient.testChapter());
-			assertTrue(ChapterEventsClient.connectUrl().endsWith("/v1/chapter-events/connect"));
-			assertTrue(ChapterEventsClient.acceptedChapterOrigin(domain));
-
-			for (String bad : new String[] {
-					 "http://informal-leone-decorating-venue.trycloudflare.com",
-					 "https://informal-leone-decorating-venue.trycloudflare.com.evil.test",
-					 "https://bad.example.com",
-					 "https://user:pass@informal-leone-decorating-venue.trycloudflare.com",
-					 domain + "/other", domain + "?redirect=evil"})
-			{
-				System.setProperty("holyempire.dev.chapterEventsTestOrigin", bad);
-				assertEquals(ChapterEventsClient.BASE, ChapterEventsClient.origin());
-				assertFalse(ChapterEventsClient.acceptedChapterOrigin(bad));
-			}
-
-			System.setProperty("holyempire.dev.chapterEventsTestOrigin", domain);
-			System.setProperty("holyempire.dev.chapterEventsTestGuild", "736564064834289774");
-			assertFalse(ChapterEventsClient.isDevTestMode());
-			assertEquals(ChapterEventsClient.BASE, ChapterEventsClient.origin());
-		}
-		finally
-		{
-			for (int i = 0; i < keys.length; i++)
-			{
-				if (originals[i] == null)
-				{
-					System.clearProperty(keys[i]);
-				}
-				else
-				{
-					System.setProperty(keys[i], originals[i]);
-				}
-			}
-		}
+		assertEquals(ChapterEventsClient.BASE, ChapterEventsClient.origin());
+		assertEquals(ChapterEventsClient.BASE + "/v1/chapter-events/connect",
+			ChapterEventsClient.connectUrl());
+		assertTrue(ChapterEventsClient.acceptedChapterOrigin(ChapterEventsClient.BASE));
+		assertFalse(ChapterEventsClient.acceptedChapterOrigin("http://127.0.0.1:8765"));
+		assertFalse(ChapterEventsClient.acceptedChapterOrigin("https://untrusted.example"));
 	}
+
 
 	@Test public void memberSessionsExpireAndCannotTransferChapter()
 	{

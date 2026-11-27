@@ -284,16 +284,7 @@ public class EmpireCommunicationsPanelTest
 			SwingUtilities.invokeAndWait(() -> {});
 			SwingUtilities.invokeAndWait(
 				() -> assertFalse(named(panel[0], "holyEmpireEmergencyTicker").isVisible()));
-			panel[0].setViewPreview(HolyEmpireViewPreview.EMPEROR);
-			SwingUtilities.invokeAndWait(() -> {});
-			SwingUtilities.invokeAndWait(
-				() -> assertFalse(named(panel[0], "holyEmpireEmergencyTicker").isVisible()));
 			panel[0].setMembershipConfirmed(true);
-			panel[0].setViewPreview(HolyEmpireViewPreview.OUTSIDE);
-			SwingUtilities.invokeAndWait(() -> {});
-			SwingUtilities.invokeAndWait(
-				() -> assertFalse(named(panel[0], "holyEmpireEmergencyTicker").isVisible()));
-			panel[0].setViewPreview(HolyEmpireViewPreview.LIVE);
 			SwingUtilities.invokeAndWait(() -> {});
 			SwingUtilities.invokeAndWait(
 				() -> assertTrue(named(panel[0], "holyEmpireEmergencyTicker").isVisible()));

@@ -70,10 +70,7 @@ final class FederationBanUploadClient
 			{
 				return true;
 			}
-			// Ephemeral loopback endpoint only in isolated tests, never remote HTTP.
-			String test = System.getProperty("holyempire.testBanSyncOrigin", "");
-			return "http".equalsIgnoreCase(uri.getScheme()) &&
-				"127.0.0.1".equals(uri.getHost()) && raw.equals(test);
+			return false;
 		}
 		catch (RuntimeException ex)
 		{

@@ -144,7 +144,7 @@ public class FederationSidebarLinksTest
 			assertSame(buttons[1], named(panel[0], "holyEmpireClanFinderLink"));
 			assertNotNull(named(panel[0], "holyEmpireChapterSearch"));
 		});
-		panel[0].setPreviewUnverifiedScreen(true);
+		panel[0].showNotVerified();
 		SwingUtilities.invokeAndWait(() -> {});
 		SwingUtilities.invokeAndWait(() -> {
 			assertSame(buttons[0], named(panel[0], "holyEmpireDiscordLink"));

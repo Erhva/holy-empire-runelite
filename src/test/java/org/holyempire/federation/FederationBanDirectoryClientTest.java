@@ -60,27 +60,37 @@ public class FederationBanDirectoryClientTest
 			exchange.close();
 		});
 		server.start();
-		System.setProperty("holyempire.testBanSyncOrigin", url());
 	}
 
 	private String url()
 	{
-		return "http://127.0.0.1:" + server.getAddress().getPort();
+		return FederationBanUploadClient.OFFICIAL_ENDPOINT;
 	}
+
 
 	private FederationBanDirectoryClient.Snapshot get() throws Exception
 	{
 		return FederationBanDirectoryClient.fetch("Holy Chaos", url(), TEST_TOKEN,
-												  new OkHttpClient());
+												  testHttp());
 	}
 
 	@After public void shutdown()
 	{
-		System.clearProperty("holyempire.testBanSyncOrigin");
 		if (server != null)
 		{
 			server.stop(0);
 		}
+	}
+
+	/** Route only test HTTP traffic to the local fixture server. Production URLs remain pinned. */
+	private OkHttpClient testHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.Request request = chain.request();
+			okhttp3.HttpUrl local = request.url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(request.newBuilder().url(local).build());
+		}).build();
 	}
 
 	@Test public void privatePostReturnsCompleteChapterList() throws Exception
@@ -111,7 +121,7 @@ public class FederationBanDirectoryClientTest
 		try
 		{
 			FederationBanDirectoryClient.fetch("Holy Chaos", "https://bad.example.org", TEST_TOKEN,
-											   new OkHttpClient());
+											   testHttp());
 			fail("Unapproved origin must be refused");
 		}
 		catch (IllegalArgumentException expected)

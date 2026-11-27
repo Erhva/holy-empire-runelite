@@ -131,9 +131,7 @@ final class RemoteChapterImages
 		{
 			return true;
 		}
-		// The only non-production image origin is a local developer test server.
-		return "http".equalsIgnoreCase(url.getProtocol()) &&
-			("127.0.0.1".equals(url.getHost()) || "localhost".equalsIgnoreCase(url.getHost()));
+		return false;
 	}
 
 	private byte[] download(String digest) throws IOException

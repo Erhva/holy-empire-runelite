@@ -143,7 +143,6 @@ public class FederationPlugin extends Plugin
 	private final FederationBanResyncReminder banResyncReminder = new FederationBanResyncReminder();
 	private long nextBanResyncCheckMillis;
 	private long lastNativeModerationReminderAt;
-	private long lastBanSyncDiagnosticMillis;
 	private final Map<String, Long> recruitmentAlertTimes = new HashMap<>();
 	private final FederationApplicantOneTimeBypass applicantBypass =
 		new FederationApplicantOneTimeBypass();
@@ -163,8 +162,7 @@ public class FederationPlugin extends Plugin
 		pluginData.createDirectories();
 		officerSecrets = new FederationOfficerCredentialStore(pluginData);
 		rememberedDiscord = new FederationOfficerCredentialStore(
-			pluginData.joinSegment(ChapterEventsClient.isDevTestMode() ? "discord-remembered-test"
-																	   : "discord-remembered"));
+			pluginData.joinSegment("discord-remembered"));
 		enrollmentClient =
 			new FederationOfficerEnrollmentClient(httpClient, pluginData, officerSecrets);
 		WomDirectoryClient.usePluginCache(pluginData.joinSegment("wom-rosters.json"));
@@ -186,14 +184,6 @@ public class FederationPlugin extends Plugin
 			thread.setDaemon(true);
 			return thread;
 		});
-		// An earlier developer-only picker had a redundant YOUR_ACCOUNT
-		// preview. Migrate stored selections before the enum is parsed.
-		// The real account is always the LIVE entry; this changes no rights.
-		if ("YOUR_ACCOUNT".equals(
-				configManager.getConfiguration("holyEmpireFederation", "testViewPreview")))
-		{
-			configManager.unsetConfiguration("holyEmpireFederation", "testViewPreview");
-		}
 		// The old syncable ConfigManager key must never retain a bearer secret.
 		if (config.banSyncToken() != null && !config.banSyncToken().isEmpty())
 		{
@@ -209,8 +199,6 @@ public class FederationPlugin extends Plugin
 			value -> configManager.setConfiguration("holyEmpireFederation", "collapsedEventIds", value));
 		panel.setEventImageLoader(
 			new EventImageLoader(httpClient, () -> chapterEventMemberSession));
-		if (Boolean.getBoolean("holyempire.dev.testMasterAccess"))
-			panel.setViewPreview(config.testViewPreview());
 		panel.setEventHistoryDays(config.eventHistoryDays());
 		panel.setEmergencyTickerEnabled(config.receiveEmergencyBroadcasts());
 		inlineHighlightSettings = new EmpireHighlightOrderSettings(configManager);
@@ -1957,10 +1945,6 @@ public class FederationPlugin extends Plugin
 
 	private String rsvpChapter()
 	{
-		if (ChapterEventsClient.isDevTestMode())
-		{
-			return ChapterEventsClient.testChapter();
-		}
 		// Discord's verified session is chapter-scoped by the server.
 		// On multi-chapter accounts it need not match the active native CC.
 		ChapterEventsClient.MemberSession verified = chapterEventMemberSession;
@@ -2081,16 +2065,10 @@ public class FederationPlugin extends Plugin
 				ChapterEventsClient.MemberSession member = chapterEventMemberSession;
 				String nativeScope = rsvpChapter();
 				List<DiscordEventsClient.Event> events;
-				if (ChapterEventsClient.isDevTestMode())
+				if (member != null && nativeScope != null && member.valid(nativeScope))
 				{
-					// Preserve the separate, restricted Test calendar preview.
-					events = ChapterEventsClient.readRoster(account, httpClient);
-				}
-				else if (member != null && nativeScope != null && member.valid(nativeScope))
-				{
-					// Private production chapter events are never retrieved from
-					// a client-declared RuneScape username. The server derives
-					// the chapter from the redeemed Discord OAuth session.
+					// Private production chapter events are derived from the redeemed
+					// Discord session, not an unverified RuneScape name.
 					events = ChapterEventsClient.read(nativeScope, member, httpClient);
 				}
 				else
@@ -2411,12 +2389,6 @@ public class FederationPlugin extends Plugin
 
 	@Subscribe public void onConfigChanged(ConfigChanged event)
 	{
-		if (panel != null && "holyEmpireFederation".equals(event.getGroup()) &&
-			"testViewPreview".equals(event.getKey()) &&
-			Boolean.getBoolean("holyempire.dev.testMasterAccess"))
-		{
-			panel.setViewPreview(config.testViewPreview());
-		}
 		if (panel != null && "holyEmpireFederation".equals(event.getGroup()) &&
 			"receiveEmergencyBroadcasts".equals(event.getKey()))
 			panel.setEmergencyTickerEnabled(config.receiveEmergencyBroadcasts());
@@ -3512,33 +3484,6 @@ public class FederationPlugin extends Plugin
 			inGameBanSyncButton.update(client);
 		}
 		checkForNewNativeBans();
-		// Opt-in diagnostic in the isolated developer launcher only. Log no
-		// player names, ban-list entries or upload secrets.
-		if (Boolean.getBoolean("holyempire.debugBanSync"))
-		{
-			net.runelite.api.widgets.Widget frame =
-				client.getWidget(net.runelite.api.gameval.InterfaceID.ClansBanned.FRAME);
-			if (frame != null && !frame.isHidden())
-			{
-				long now = System.currentTimeMillis();
-				if (now - lastBanSyncDiagnosticMillis >= 15000)
-				{
-					lastBanSyncDiagnosticMillis = now;
-					net.runelite.api.clan.ClanSettings settings = client.getClanSettings();
-					net.runelite.api.clan.ClanRank own =
-						FederationInGameBanSyncButton.ownRank(client);
-					org.slf4j.LoggerFactory.getLogger(FederationPlugin.class)
-						.info("Ban-sync UI check: frame=visible, bansWidgetVisible={}, "
-								  + "clanSettingsPresent={}, ownRank={}, ownerOrDeputy={}, "
-								  + "womMembershipReady={}",
-							  client.getWidget(FederationInGameBanSyncButton.BANS_GROUP,
-											   FederationInGameBanSyncButton.CONTENTS) != null,
-							  settings != null, own == null ? "unknown" : own.getRank(),
-							  FederationInGameBanSyncButton.isOwnerOrDeputy(client),
-							  session.isEligible());
-				}
-			}
-		}
 		if (client.isMenuOpen())
 		{
 			return;

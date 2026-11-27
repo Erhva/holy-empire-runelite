@@ -35,12 +35,6 @@ import okhttp3.ResponseBody;
 final class ChapterEventsClient
 {
 	static final String BASE = FederationBanUploadClient.OFFICIAL_ENDPOINT;
-	private static final String DEV_HOME = "/tmp/holy-empire-runelite-test/home";
-	// RuneLite.start() overwrites jagex.userhome with RUNELITE_DIR, which
-	// is user.home + "/.runelite". This is deliberately separate from
-	// the user's real RuneLite and Jagex-account storage.
-	private static final String DEV_RUNELITE_DIR = DEV_HOME + "/.runelite";
-	private static final String TEST_GUILD = "293070715706671104";
 	private static final int MAX_RESPONSE = 128_000;
 	private static final String MIME = "application/json; charset=utf-8";
 
@@ -48,47 +42,10 @@ final class ChapterEventsClient
 	{
 	}
 
-	/** No release or normal RuneLite instance may redirect private auth tokens. */
-	static boolean isDevTestMode()
-	{
-		return DEV_HOME.equals(System.getProperty("user.home", "")) &&
-			DEV_RUNELITE_DIR.equals(System.getProperty("jagex.userhome", "")) &&
-			"true".equals(System.getProperty("holyempire.dev.testMasterAccess", "")) &&
-			TEST_GUILD.equals(System.getProperty("holyempire.dev.chapterEventsTestGuild", ""));
-	}
-
-	static String testChapter()
-	{
-		String chapter = System.getProperty("holyempire.dev.chapterEventsTestChapter", "");
-		return isDevTestMode() && "Holy Chaos".equals(chapter) ? chapter : "";
-	}
-
+	/** Chapter-event requests always use the fixed production origin. */
 	static String origin()
 	{
-		String test = System.getProperty("holyempire.dev.chapterEventsTestOrigin", "");
-		return isDevTestMode() && acceptedDevOrigin(test) ? test : BASE;
-	}
-
-	private static boolean acceptedDevOrigin(String test)
-	{
-		if (!isDevTestMode() || test == null || test.length() > 200)
-		{
-			return false;
-		}
-		try
-		{
-			URI uri = URI.create(test);
-			String host = uri.getHost();
-			return "https".equals(uri.getScheme()) && host != null &&
-				host.matches("[a-z0-9-]+\\.trycloudflare\\.com") && uri.getPort() == -1 &&
-				uri.getUserInfo() == null && uri.getRawQuery() == null &&
-				uri.getFragment() == null &&
-				(uri.getRawPath() == null || uri.getRawPath().isEmpty());
-		}
-		catch (RuntimeException ex)
-		{
-			return false;
-		}
+		return BASE;
 	}
 
 	static String connectUrl()
@@ -98,9 +55,7 @@ final class ChapterEventsClient
 
 	static boolean acceptedChapterOrigin(String url)
 	{
-		return FederationBanUploadClient.acceptedEndpoint(url) ||
-			acceptedDevOrigin(url) &&
-				url.equals(System.getProperty("holyempire.dev.chapterEventsTestOrigin", ""));
+		return FederationBanUploadClient.acceptedEndpoint(url);
 	}
 
 	static final class MemberSession
@@ -180,8 +135,7 @@ final class ChapterEventsClient
 								  .url(base.replaceAll("/+$", "") + "/v1/chapter-events/" + path)
 								  .header("Accept", "application/json")
 								  .post(RequestBody.create(MediaType.parse(MIME), bytes));
-		if ("read".equals(path) || "rsvp".equals(path) || "empire-interest".equals(path) ||
-			("roster-read".equals(path) && isDevTestMode()))
+		if ("read".equals(path) || "rsvp".equals(path) || "empire-interest".equals(path))
 		{
 			req.header("Authorization", "Bearer " + bearer);
 		}
@@ -322,8 +276,7 @@ final class ChapterEventsClient
 	{
 		JsonObject request = new JsonObject();
 		// The backend checks the requested scope against LIVE Discord roles.
-		// Test-guild mode retains its original API contract.
-		if (!isDevTestMode() && nativeChapter != null && !nativeChapter.isEmpty())
+		if (nativeChapter != null && !nativeChapter.isEmpty())
 			request.addProperty("chapter", nativeChapter);
 		JsonObject result = connectPost("start", request, http);
 		try
@@ -558,31 +511,10 @@ final class ChapterEventsClient
 	 * Discord code. This is a non-confidential, username-scoped convenience
 	 * feed: an RSN alone is not proof of account ownership.
 	 */
-	/** Dev-only credential: never send to the production roster endpoint. */
-	static String devPreviewCredential() throws IOException
-	{
-		if (!isDevTestMode() || BASE.equals(origin()))
-		{
-			throw new IOException("Isolated Test origin is unavailable");
-		}
-		String previewCredential = System.getenv("HOLY_EMPIRE_DEV_EVENT_READER_TOKEN");
-		if (previewCredential == null || previewCredential.isEmpty())
-		{
-			throw new IOException("Isolated developer preview token not configured");
-		}
-		if (!previewCredential.matches("[A-Za-z0-9_-]{40,128}"))
-		{
-			throw new IOException("Isolated Test event reader is not configured");
-		}
-		return previewCredential;
-	}
 
 	static List<DiscordEventsClient.Event> readRoster(String account, OkHttpClient http)
 		throws IOException
 	{
-		// Development uses a separate, private sandbox preview credential.
-		// Normal RuneLite cannot access it or redirect to the Test guild.
-		String previewCredential = isDevTestMode() ? devPreviewCredential() : null;
 		String rsn = WomDirectoryClient.normalize(account);
 		if (rsn.isEmpty() || rsn.length() > 12)
 		{
@@ -590,7 +522,7 @@ final class ChapterEventsClient
 		}
 		JsonObject request = new JsonObject();
 		request.addProperty("rsn", rsn);
-		JsonObject doc = post("roster-read", request, previewCredential, origin(), http);
+		JsonObject doc = post("roster-read", request, null, origin(), http);
 		try
 		{
 			if (doc.get("schema_version").getAsInt() != 1 ||
@@ -689,7 +621,7 @@ final class ChapterEventsClient
 				// Only a confirmed Discord bot message gets a clickable
 				// chapter-post link. This URL cannot be supplied by a client.
 				String discordPost = event.has("url") ? event.get("url").getAsString() : "";
-				String targetGuild = isDevTestMode() ? TEST_GUILD : "736564064834289774";
+				String targetGuild = "736564064834289774";
 				if (!discordPost.isEmpty() &&
 					!discordPost.matches("https://discord[.]com/channels/" + targetGuild +
 										 "/[0-9]{15,22}/[0-9]{15,22}"))

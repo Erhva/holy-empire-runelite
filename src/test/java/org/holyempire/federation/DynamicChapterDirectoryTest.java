@@ -142,13 +142,23 @@ public class DynamicChapterDirectoryTest
 			}
 		});
 		server.start();
-		return "http://127.0.0.1:" + server.getAddress().getPort();
+		return "https://roster.holyempireosrs.cc";
+	}
+
+	/** Redirect only injected test-client traffic to the local fixture. */
+	private OkHttpClient fixtureHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.HttpUrl url = chain.request().url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(chain.request().newBuilder().url(url).build());
+		}).build();
 	}
 
 	@Test public void newChapterAndClanChatWorkWithoutCodeChange() throws Exception
 	{
 		String base = serveDirectory(directory());
-		WomDirectoryClient.Snapshot result = CentralRosterClient.fetch(base, new OkHttpClient());
+		WomDirectoryClient.Snapshot result = CentralRosterClient.fetch(base, fixtureHttp());
 		assertEquals(17, result.directory.groupCount());
 		assertEquals(17, result.chapters.size());
 		assertEquals("New Legion", result.members.get("legionuser").get(0));
@@ -165,7 +175,7 @@ public class DynamicChapterDirectoryTest
 	@Test public void emptyNewChapterStillAppearsAndHasNoVerifiedMembers() throws Exception
 	{
 		WomDirectoryClient.Snapshot result =
-			CentralRosterClient.fetch(serveDirectory(directory(), true), new OkHttpClient());
+			CentralRosterClient.fetch(serveDirectory(directory(), true), fixtureHttp());
 		assertEquals(17, result.directory.groupCount());
 		assertEquals(17, result.chapters.size());
 		assertTrue(result.chapters.containsKey("New Legion"));
@@ -182,7 +192,7 @@ public class DynamicChapterDirectoryTest
 	@Test public void newGroupSurvivesLocalCacheRestart() throws Exception
 	{
 		String base = serveDirectory(directory());
-		WomDirectoryClient.Snapshot result = CentralRosterClient.fetch(base, new OkHttpClient());
+		WomDirectoryClient.Snapshot result = CentralRosterClient.fetch(base, fixtureHttp());
 		Filepath path =
 			Filepath.Unchecked.getRooted(temp.getRoot().toPath()).joinSegment("dynamic-cache.json");
 		long now = System.currentTimeMillis();

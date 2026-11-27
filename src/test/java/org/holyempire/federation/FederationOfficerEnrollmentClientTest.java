@@ -25,13 +25,14 @@ import static org.junit.Assert.*;
 public class FederationOfficerEnrollmentClientTest
 {
 	@Rule public TemporaryFolder folder = new TemporaryFolder();
+	private HttpServer server;
 
 	@Test
 	public void locallyGeneratedCredentialIsNotSentAndPersistsOnlyOnApproval() throws Exception
 	{
 		AtomicReference<String> observedRequest = new AtomicReference<>("");
 		AtomicReference<String> observedStatus = new AtomicReference<>("");
-		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/v1/officer-enroll/", exchange -> {
 			String request =
 				new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
@@ -65,15 +66,14 @@ public class FederationOfficerEnrollmentClientTest
 			}
 		});
 		server.start();
-		String origin = "http://127.0.0.1:" + server.getAddress().getPort();
-		System.setProperty("holyempire.testBanSyncOrigin", origin);
+		String origin = FederationBanUploadClient.OFFICIAL_ENDPOINT;
 		try
 		{
 			Path root = folder.getRoot().toPath();
 			Filepath directory = Filepath.Unchecked.getRooted(root);
 			FederationOfficerCredentialStore keys = new FederationOfficerCredentialStore(directory);
 			FederationOfficerEnrollmentClient client =
-				new FederationOfficerEnrollmentClient(new OkHttpClient(), directory, keys, origin);
+				new FederationOfficerEnrollmentClient(testHttp(), directory, keys, origin);
 			assertEquals("https://discord.com/oauth2/authorize?state=sample",
 						 client.request("Officer One", "Holy Empire"));
 			assertEquals("", keys.read("Officer One"));
@@ -119,14 +119,24 @@ public class FederationOfficerEnrollmentClientTest
 		}
 		finally
 		{
-			System.clearProperty("holyempire.testBanSyncOrigin");
 			server.stop(0);
 		}
 	}
 
+	/** Route only test HTTP traffic to the local fixture server. Production URLs remain pinned. */
+	private OkHttpClient testHttp()
+	{
+		return new OkHttpClient.Builder().addInterceptor(chain -> {
+			okhttp3.Request request = chain.request();
+			okhttp3.HttpUrl local = request.url().newBuilder()
+				.scheme("http").host("127.0.0.1").port(server.getAddress().getPort()).build();
+			return chain.proceed(request.newBuilder().url(local).build());
+		}).build();
+	}
+
 	@Test public void awaitingGameDisplaysPendingReview() throws Exception
 	{
-		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/v1/officer-enroll/", exchange -> {
 			String path = exchange.getRequestURI().getPath();
 			String response;
@@ -156,20 +166,18 @@ public class FederationOfficerEnrollmentClientTest
 			}
 		});
 		server.start();
-		String origin = "http://127.0.0.1:" + server.getAddress().getPort();
-		System.setProperty("holyempire.testBanSyncOrigin", origin);
+		String origin = FederationBanUploadClient.OFFICIAL_ENDPOINT;
 		try
 		{
 			Filepath directory = Filepath.Unchecked.getRooted(folder.getRoot().toPath());
 			FederationOfficerEnrollmentClient client = new FederationOfficerEnrollmentClient(
-				new OkHttpClient(), directory, new FederationOfficerCredentialStore(directory),
+				testHttp(), directory, new FederationOfficerCredentialStore(directory),
 				origin);
 			client.request("Officer One", "Holy Empire");
 			assertEquals("Pending Review", client.check("Officer One", "Holy Empire", () -> true));
 		}
 		finally
 		{
-			System.clearProperty("holyempire.testBanSyncOrigin");
 			server.stop(0);
 		}
 	}
@@ -184,7 +192,7 @@ public class FederationOfficerEnrollmentClientTest
 		Filepath root = Filepath.Unchecked.getRooted(folder.getRoot().toPath());
 		try
 		{
-			new FederationOfficerEnrollmentClient(new OkHttpClient(), root,
+			new FederationOfficerEnrollmentClient(testHttp(), root,
 												  new FederationOfficerCredentialStore(root),
 												  "https://attacker.example");
 			fail("Arbitrary enrollment servers are forbidden");
