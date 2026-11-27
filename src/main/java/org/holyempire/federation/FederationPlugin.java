@@ -18,7 +18,6 @@ import java.awt.Graphics2D;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.Notifier;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.config.Notification;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

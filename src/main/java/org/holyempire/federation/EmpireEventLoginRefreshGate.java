@@ -13,59 +13,59 @@ package org.holyempire.federation;
  */
 final class EmpireEventLoginRefreshGate
 {
-    private String account = "";
-    private long generation = Long.MIN_VALUE;
-    private int interestFailures;
+	private String account = "";
+	private long generation = Long.MIN_VALUE;
+	private int interestFailures;
 
-    synchronized boolean claim(String currentAccount, long currentGeneration, boolean eligible)
-    {
-        if (!eligible || currentAccount == null || currentAccount.isEmpty())
-        {
-            return false;
-        }
-        if (currentGeneration == generation && currentAccount.equals(account))
-        {
-            return false;
-        }
-        account = currentAccount;
-        generation = currentGeneration;
-        interestFailures = 0;
-        return true;
-    }
+	synchronized boolean claim(String currentAccount, long currentGeneration, boolean eligible)
+	{
+		if (!eligible || currentAccount == null || currentAccount.isEmpty())
+		{
+			return false;
+		}
+		if (currentGeneration == generation && currentAccount.equals(account))
+		{
+			return false;
+		}
+		account = currentAccount;
+		generation = currentGeneration;
+		interestFailures = 0;
+		return true;
+	}
 
-    /** Returns a bounded retry delay in seconds, or -1 after three failures. */
-    synchronized int interestFailed(String currentAccount, long currentGeneration)
-    {
-        if (!sameSession(currentAccount, currentGeneration) || interestFailures >= 3)
-        {
-            return -1;
-        }
-        interestFailures++;
-        return interestFailures == 1 ? 15 : interestFailures == 2 ? 30 : 60;
-    }
+	/** Returns a bounded retry delay in seconds, or -1 after three failures. */
+	synchronized int interestFailed(String currentAccount, long currentGeneration)
+	{
+		if (!sameSession(currentAccount, currentGeneration) || interestFailures >= 3)
+		{
+			return -1;
+		}
+		interestFailures++;
+		return interestFailures == 1 ? 15 : interestFailures == 2 ? 30 : 60;
+	}
 
-    synchronized boolean retryPending(String currentAccount, long currentGeneration,
-                                      int failedAttempt)
-    {
-        return sameSession(currentAccount, currentGeneration) &&
-            interestFailures == failedAttempt && failedAttempt > 0;
-    }
+	synchronized boolean retryPending(String currentAccount, long currentGeneration,
+									  int failedAttempt)
+	{
+		return sameSession(currentAccount, currentGeneration) &&
+			interestFailures == failedAttempt && failedAttempt > 0;
+	}
 
-    synchronized int failureCount(String currentAccount, long currentGeneration)
-    {
-        return sameSession(currentAccount, currentGeneration) ? interestFailures : 0;
-    }
+	synchronized int failureCount(String currentAccount, long currentGeneration)
+	{
+		return sameSession(currentAccount, currentGeneration) ? interestFailures : 0;
+	}
 
-    synchronized void interestSucceeded(String currentAccount, long currentGeneration)
-    {
-        if (sameSession(currentAccount, currentGeneration))
-        {
-            interestFailures = 0;
-        }
-    }
+	synchronized void interestSucceeded(String currentAccount, long currentGeneration)
+	{
+		if (sameSession(currentAccount, currentGeneration))
+		{
+			interestFailures = 0;
+		}
+	}
 
-    private boolean sameSession(String currentAccount, long currentGeneration)
-    {
-        return generation == currentGeneration && account.equals(currentAccount);
-    }
+	private boolean sameSession(String currentAccount, long currentGeneration)
+	{
+		return generation == currentGeneration && account.equals(currentAccount);
+	}
 }

@@ -13,7 +13,6 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.inject.Inject;
 import net.runelite.api.Client;
