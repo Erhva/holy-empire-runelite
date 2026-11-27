@@ -10,7 +10,7 @@
 - **Respond to Discord events:** Open the original Discord post or use the RSVP options available to verified chapter members, and see event interest totals without hunting through Discord channels.
 - **Read announcements and broadcasts:** Catch up on Holy Empire announcements, follow links to their Discord posts, and receive enabled clan broadcasts and event reminders in RuneLite.
 - **Spot Holy Empire house hosts:** Highlight Holy Empire player-owned house hosts and optionally move their listings to the top of the house advertisement board.
-- **Customize Indicators:** Adjust indicator colors, chapter highlights, display priority, event reminders, and broadcast preferences in the Holy Empire settings.
+- **Customization:** Adjust indicator colors, chapter highlights, display priority, event reminders, and broadcast preferences in the Holy Empire settings.
 
 ## Installation
 
